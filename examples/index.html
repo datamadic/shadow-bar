@@ -32,32 +32,30 @@
 							var self = this;
 
 							self.isScrolling = false;
+							//self.scrollRange = [0, this.parentNode.clientHeight - 15];
 
 							this.addEventListener('mousedown',function(event){
 								console.log('down location', self.translatedY);
 								self.isScrolling = true;						
 								self.initialLocation = event.y;
-								self.applyFirstTimeTranslate = true;
-								//self.lastLocation = initialLocation;
 							});
 							document.addEventListener('mousemove',function(event){
 								if (self.isScrolling) {
-									//console.log(event)
-									var location = event.y - self.initialLocation + (self.translatedY || 0);
+									var location = event.y - self.initialLocation + (self.translatedY || 0),
+											scrollTill =  self.parentNode.clientHeight - 50; //account for scroll buttons + thumb height
+									location = (location ) < 0 ? 0 : location;
+									location = (location ) > scrollTill ? scrollTill : location;
 
 									requestAnimationFrame(function(){
 										self.style.webkitTransform = 'translateY('+ location +'px)';
-									});
+									});	
 								}
 							});
 							document.addEventListener('mouseup',function(event){
 								if(self.isScrolling) {
 									self.isScrolling = false;
-									console.log('up eventY %d translation %d', event.y, self.translatedY);
-									self.upLocation = event.y;
 									self.translatedY = event.y - self.initialLocation + (self.translatedY || 0);
 								}
-								
 							});
 						}
 					}
