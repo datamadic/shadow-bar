@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+	<head>
+		<link title="scrollbar" rel="import" href="../components/scrollbar.html">
+		<style>
+			.demo-scroll-surface {
+				width: 300px;
+				height: 500px;
+				background-color: indianred;
+				position: relative;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="demo-scroll-surface">
+			<div class="scrollbar"></div>
+		</div>
+		
+
+		<script>
+
+			//register the scrollbar elements
+			(function(){
+				var scrollBarProto = Object.create(HTMLElement.prototype, {
+
+				});
+				var scrollBarUpProto = Object.create(HTMLElement.prototype, {});
+				var scrollBarThumbProto = Object.create(HTMLElement.prototype, {
+					createdCallback : {
+						value : function(event){
+							console.log('the event ',event, this, this.parentNode.clientHeight);
+							var self = this;
+
+							self.isScrolling = false;
+
+							this.addEventListener('mousedown',function(event){
+								console.log('down location', self.translatedY);
+								self.isScrolling = true;						
+								self.initialLocation = event.y;
+								self.applyFirstTimeTranslate = true;
+								//self.lastLocation = initialLocation;
+							});
+							document.addEventListener('mousemove',function(event){
+								if (self.isScrolling) {
+									//console.log(event)
+									var location = event.y - self.initialLocation + (self.translatedY || 0);
+
+									requestAnimationFrame(function(){
+										self.style.webkitTransform = 'translateY('+ location +'px)';
+									});
+								}
+							});
+							document.addEventListener('mouseup',function(event){
+								if(self.isScrolling) {
+									self.isScrolling = false;
+									console.log('up eventY %d translation %d', event.y, self.translatedY);
+									self.upLocation = event.y;
+									self.translatedY = event.y - self.initialLocation + (self.translatedY || 0);
+								}
+								
+							});
+						}
+					}
+				});
+				var scrollBarDownProto = Object.create(HTMLElement.prototype, {});
+
+				document.registerElement('scroll-bar', {
+					prototype: scrollBarProto
+				});
+				document.registerElement('scroll-bar-up', {
+					prototype: scrollBarUpProto
+				});
+				document.registerElement('scroll-bar-thumb', {
+					prototype: scrollBarThumbProto
+				});
+				document.registerElement('scroll-bar-down', {
+					prototype: scrollBarDownProto
+				});
+			})()
+
+			var scrollbarImport = document.querySelector('link[title="scrollbar"]').import,
+					scrollbarTemplate = scrollbarImport.querySelector('template'),
+					scrollbar = document.querySelector('.scrollbar'),
+					scrollbarShadow = scrollbar.createShadowRoot();
+
+			scrollbarShadow.appendChild(document.importNode(scrollbarTemplate.content,true));
+
+			console.log(scrollbar, scrollbarTemplate, scrollbarShadow);
+		</script>
+	</body>
+</html>
