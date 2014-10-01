@@ -1,72 +1,64 @@
-<template>
-	<style>
-/*		.scroll-bar {
-			width: 15px;
-			background-color: lightgrey;
-			position: absolute;
-			top:0;
-			left:100%;
-			bottom:0;
-		}
-		.scroll-bar-up{
-			position: absolute;
-			top: 0;
-			width: 15px;
-			height: 15px;
-			background-color: darkgrey;
-		}
-		.scroll-bar-thumb {
-			background-color: steelblue;
-			width: 15px;
-			height: 20px;
-			top: 15px;
-			position: absolute;
-		}
-		.scroll-bar-down{
-			position: absolute;
-			bottom: 0;
-			width: 15px;
-			height: 15px;
-			background-color: darkgrey;
-		}*/
-		scroll-bar {
-			width: 15px;
-			background-color: lightgrey;
-			position: absolute;
-			top:0;
-			left:100%;
-			bottom:0;
-		}
-		scroll-bar-up{
-			position: absolute;
-			top: 0;
-			width: 15px;
-			height: 15px;
-			background-color: darkgrey;
-		}
-		scroll-bar-thumb {
-			background-color: steelblue;
-			width: 15px;
-			height: 20px;
-			top: 15px;
-			position: absolute;
-		}
-		scroll-bar-down{
-			position: absolute;
-			bottom: 0;
-			width: 15px;
-			height: 15px;
-			background-color: darkgrey;
-		}
-	</style>
+<!doctype html>
+<html>
+	<head></head>
+	<body>
+		<template>
+			<style>
+				.scroll-bar {
+					width: 15px;
+					background-color: lightgrey;
+					position: absolute;
+					top:0;
+					left:100%;
+					bottom:0;
+				}
+				scroll-bar {
+					width: 15px;
+					background-color: lightgrey;
+					position: absolute;
+					top:0;
+					left:100%;
+					bottom:0;
+				}
+				scroll-bar-up{
+					position: absolute;
+					top: 0;
+					width: 15px;
+					height: 15px;
+					background-color: darkgrey;
+				}
+				scroll-bar-thumb {
+					background-color: steelblue;
+					width: 15px;
+					height: 20px;
+					top: 15px;
+					position: absolute;
+				}
+				scroll-bar-down{
+					position: absolute;
+					bottom: 0;
+					width: 15px;
+					height: 15px;
+					background-color: darkgrey;
+				}
+			</style>
+			<div class="scroll-bar" draggable="false">
+				<scroll-bar-up draggable="false"></scroll-bar-up>
+				<scroll-bar-thumb draggable="false"></scroll-bar-thumb>
+				<scroll-bar-down draggable="false"></scroll-bar-down>
+			</div>
+		</template>
+		<script>
+			(function(){
+				
+				var scrollbar = document.querySelector('scroll-bar'),
+						thumb = document.querySelector('scroll-bar-thumb'),
+						thumbFromScrollbar = scrollbar.querySelector('scroll-bar-thumb');
 
-	<scroll-bar draggable="false">
-		<scroll-bar-up draggable="false"></scroll-bar-up>
-		<scroll-bar-thumb draggable="false"></scroll-bar-thumb>
-		<scroll-bar-down draggable="false"></scroll-bar-down>
-	</scroll-bar>
-
-	<script>
-
-	</script>
-</template>
+				console.log('looking for you scroll-bar %o and thumb %o', scrollbar, thumb, thumbFromScrollbar );
+				console.log('What about from the scroll bar itself %o', thumbFromScrollbar);
+			})()
+		</script>
+	</body>
+</html>
+		
