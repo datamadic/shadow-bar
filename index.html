@@ -1,1 +1,115 @@
-running
+<!doctype html>
+<html>
+	<head>
+		<link title="scrollbar" rel="import" href="../components/scrollbar.html">
+	</head>
+	<body>
+		
+		<script>
+
+			//register the scrollbar elements
+			(function(){
+				console.log('i run on import');
+				console.log(document.querySelectorAll('script'))
+
+				var componentLink = document.createElement('link');
+				
+				componentLink.title = 'scrollbar';
+				componentLink.rel = 'import';
+				componentLink.href = '../../components/scrollbar.html';
+
+				document.head.appendChild(componentLink);
+
+
+				var scrollBarProto = Object.create(HTMLElement.prototype, {
+					createdCallback: {
+						value: function(){
+							// set up the template 
+							var scrollbarImport = document.querySelector('link[title="scrollbar"]').import,
+									scrollbarTemplate = scrollbarImport.querySelector('template'),
+									scrollBarImportClone = document.importNode(scrollbarTemplate.content,true),
+									scrollbarShadowRoot = this.createShadowRoot();
+
+							scrollbarShadowRoot.appendChild(scrollBarImportClone);
+
+							// get the actionable child elements 
+							this.thumb = scrollbarShadowRoot.querySelector('scroll-bar-thumb');
+							this.btnUp = scrollbarShadowRoot.querySelector('scroll-bar-up');
+							this.btnDown = scrollbarShadowRoot.querySelector('scroll-bar-down');
+
+						}
+					},
+					registerScrollMoveCallback: {
+						value: function(callback){
+							var thumb = this.querySelector('scroll-bar-thumb');
+							this.scrollMoveCallback = callback;
+						}
+					}
+				});
+				var scrollBarUpProto = Object.create(HTMLElement.prototype, {});
+				var scrollBarThumbProto = Object.create(HTMLElement.prototype, {
+					createdCallback : {
+						value : function(event){
+							var self = this;
+
+							self.isScrolling = false;
+
+							this.addEventListener('mousedown',function(event){
+								self.isScrolling = true;						
+								self.initialLocation = event.y;
+							});
+							document.addEventListener('mousemove',function(event){
+								if (self.isScrolling) {
+									var location = event.y - self.initialLocation + (self.translatedY || 0),
+
+											//account for scroll buttons + thumb height
+											scrollTill =  self.parentNode.clientHeight - 50; 
+									
+									//keep the scrolling in range
+									location = (location ) < 0 ? 0 : location;
+									location = (location ) > scrollTill ? scrollTill : location;
+
+									requestAnimationFrame(function(){
+										self.style.webkitTransform = 'translateY('+ location +'px)';
+										if(self.scrollMoveCallback){
+											self.scrollMoveCallback({
+												event: event,
+												percent: location / scrollTill * 100
+											});
+										}
+									});	
+								}
+							});
+							document.addEventListener('mouseup',function(event){
+								if(self.isScrolling) {
+									self.isScrolling = false;
+									self.translatedY = event.y - self.initialLocation + (self.translatedY || 0);
+								}
+							});
+						}
+					},
+					registerScrollMoveCallback: {
+						value: function(callback){
+							this.scrollMoveCallback = callback;
+						}
+					}
+				});
+				var scrollBarDownProto = Object.create(HTMLElement.prototype, {});
+
+				
+				document.registerElement('scroll-bar-up', {
+					prototype: scrollBarUpProto
+				});
+				document.registerElement('scroll-bar-thumb', {
+					prototype: scrollBarThumbProto
+				});
+				document.registerElement('scroll-bar-down', {
+					prototype: scrollBarDownProto
+				});
+				document.registerElement('scroll-bar', {
+					prototype: scrollBarProto
+				});
+			})()
+		</script>
+	</body>
+</html>

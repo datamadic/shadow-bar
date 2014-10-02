@@ -44,21 +44,10 @@
 			</style>
 			<div class="scroll-bar">
 				<scroll-bar-up></scroll-bar-up>
-				<scroll-bar-thumb></scroll-bar-thumb>
+				<scroll-bar-thumb draggable="false"></scroll-bar-thumb>
 				<scroll-bar-down></scroll-bar-down>
 			</div>
 		</template>
-		<script>
-			(function(){
-				
-				var scrollbar = document.querySelector('scroll-bar'),
-						thumb = document.querySelector('scroll-bar-thumb'),
-						thumbFromScrollbar = scrollbar.querySelector('scroll-bar-thumb');
-
-				//console.log('looking for you scroll-bar %o and thumb %o', scrollbar, thumb, thumbFromScrollbar );
-				//console.log('What about from the scroll bar itself %o', thumbFromScrollbar); 
-			})()
-		</script>
 	</body>
 </html>
 		

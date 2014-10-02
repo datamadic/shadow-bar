@@ -1,0 +1,24 @@
+{
+  "name": "shadow-bar",
+  "version": "0.1.0",
+  "homepage": "https://github.com/datamadic/shadow-bar.git",
+  "authors": [
+    "datamadic <xavier@openfin.co>"
+  ],
+  "description": "custom scroll bar that employs shadow dom, using translateY to minimize reflows",
+  "main": "index.html",
+  "keywords": [
+    "custom",
+    "scrollbar",
+    "shadow",
+    "dom"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
