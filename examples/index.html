@@ -48,6 +48,7 @@
 							console.log('\n  scrollbarImport =  document.querySelector(\'link[title="scrollbar"]\').import:     \n  %o ', scrollbarImport);
 							console.log('\n  scrollbarImport.querySelector(\'template\'):     \n  %o', scrollbarTemplate);
 							console.log('\n  scrollbarImport.querySelector(\'scroll-bar-thumb\'):     \n  %o', scrollbarImport.querySelector('scroll-bar-thumb'));
+							console.log('\n  document.querySelector(\'scroll-bar-thumb\'):     \n  %o', document.querySelector('scroll-bar-thumb'));
 							console.log('\n  scrollbarShadowRoot.querySelector(\'scroll-bar-thumb\'): \n  %o', scrollbarShadowRoot.querySelector('scroll-bar-thumb'))
 						}
 					},
@@ -55,6 +56,11 @@
 						value: function(callback){
 							var thumb = this.querySelector('scroll-bar-thumb');
 							this.scrollMoveCallback = callback;
+						}
+					},
+					demoMethod: {
+						value: function(){
+							console.log('I\'m a custom method and my `this` is the actual scroll-bar element %o', this);
 						}
 					}
 				});

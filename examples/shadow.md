@@ -11,7 +11,7 @@ that might not be clear from the get-go regarding JavaScript scope and access. I
 First, lets take a quick peek at the rules of encapsulation. 
 
 
-## Encapsulation 
+
 
 
 ### Upper Boundary Encapsulation 
@@ -47,10 +47,14 @@ you might (*mistakenly*) believe that you can query or apply styles to elements 
 The script tag, when the `<template>` is appended to a shadow root, gets added to the **global** JavaScript scope 
 (remember it was brought in via `importNode`). This is true whether the template was imported or on the initial document. 
 
-This means that it can't access the `<template>` elements even though it is inside the `<template>` itself!! 
+This means that the script can't access the `<template>` elements even though it is inside the `<template>` itself!! 
 
 So how can you access the contents programmaticly? When a call is made to `createShadowRoot()` a shadow root element is returned.
-**This element can access the shadow DOM via JavaScript.**
+**This element can access the shadow DOM via JavaScript**. 
+Here is where being able to create custom elements is so cool. Because you
+can define the prototype of the custom element, you can encapsulate the creation of the shadow root. The shadow root, created inside a method found on the prototype, can do things like `shadowRoot.querySelector('some-shadow-dom-element')`, or change styling etc. You can choose whether or not to expose the shadow root from your element via basic JavaScript privacy rules (closures). In addition, because a custom element has 
+[lifecycle callbacks](http://www.w3.org/TR/custom-elements/#registering-custom-elements), you can, for instance, instantiate the shadow root when the custom element is created, hook up any internal 
+encapsulated eventing, and expose a nice API for the cool `<whatever-widget>` you just built. 
 
 
 
@@ -65,7 +69,7 @@ Lets say you have an html page that looks like this
 	</head>
 	<body>
 		<div class="demo-scroll-surface">
-			<scroll-bar draggable="false"></scroll-bar>
+			<scroll-bar></scroll-bar>
 		</div>
 		<script>
 			/* register the custom scroll-bar */
@@ -79,17 +83,20 @@ The link imports this page
 	<style>
 		/* local styles */
 	</style>
-	<div class="scroll-bar" draggable="false">
-		<scroll-bar-up draggable="false"></scroll-bar-up>
-		<scroll-bar-thumb draggable="false"></scroll-bar-thumb>
-		<scroll-bar-down draggable="false"></scroll-bar-down>
+	<div class="scroll-bar">
+		<scroll-bar-up></scroll-bar-up>
+		<scroll-bar-thumb></scroll-bar-thumb>
+		<scroll-bar-down></scroll-bar-down>
 	</div>
+	<script>
+		var scrollBarUp = document.querySelector('scroll-bar-up'); // returns null
+	</script>
 </template>
 ```
 
-####Lets create the `<scroll-bar>` custom element. 
-Please note, the name **must** contain a hyphen (-). 
-First we create an object that will act as a prototype for the new element. This prototype object extends HTMLElement's prototype. 
+####Lets create the `<scroll-bar>` custom element.  
+First we create an object that will act as a prototype for the new element, the name **must** contain a hyphen (some-name). 
+This prototype object extends HTMLElement's prototype. 
 This will allow us to inherit tree accessor methods such as querySelector, getElementById, etc. In 
 the [createdCallback](http://www.w3.org/TR/custom-elements/#registering-custom-elements) function
 we do the heavy lifting. Here we grab a hold of the template via the import, import the node into the 
@@ -127,16 +134,56 @@ A screen shot of a console log form **inside** the createdCallback function shed
 
 ![you should be seeing a console screen shot... ](inCreated.png "From createdCallback")
 
-A few things to notice: 
+####A few things to notice: 
 
 * `document.querySelector('link[title="scrollbar"]').import` is a document 
 * From the import, you can query for the `<template>` 
 * The `<template>` contains a `#document-fragment` this is shadow DOM, only reachable from within the shadow dom tree
-* Querying for any dom element within the `#document-fragment` such as the `<scroll-bar-thumb>` element from anywhere else besides the shadow root (or within the shadow tree) will return null
-* The shadow root can query itself for child elements
+* Querying for any dom element within the `#document-fragment` such as the `<scroll-bar-thumb>` element from the document it was imported from will return null
+* Querying for shadow DOM elements from the root document or anywhere else besides the shadow root (or within the shadow tree) will return null
+* The shadow root can query the shadow DOM for elements
 
 
+###What about that custom API you mentioned? 
+Lets go back to the `scrollBarProto` and add a custom method, well call it demoMethod
 
+```
+<script>
+	/* register the custom scroll-bar */
+	var scrollBarProto = Object.create(HTMLElement.prototype, {
+		createdCallback: {
+			value: function(){
+				...
+			}
+		},
+		demoMethod: {
+			value: function(){
+				console.log('I\'m a custom method and my `this` is the actual scroll-bar element %o', this);
+			}
+		}
+	});
+</script>
+```
+We can get a hold of the custom `<scroll-bar>` from the document. Note that the outer `<scroll-bar>` element is selectable
+as an element in the documnet even though it is a shadow root, its contents, however, are shadow DOM and are not.
+Lets have a look at a few more screen shots to see whats going on here. In the first one we let the Chrome dev
+tools auto-complete some available attributes and methods on the `<scroll-bar>`. In the second console screen shot 
+we see the result of running our `demoMethod`.
+
+####Whats available 
+![you should be seeing a console screen shot... ](mixedIn.png "Console screenshot")
+
+####What the this is 
+![you should be seeing a console screen shot... ](theThis.png "Console screenshot")
+
+####A few things to notice 
+
+* `demoMethod` is there on the element alongside the other inherited methods
+* Running our `demeMethod` gives us the element itself as the `this`
+* You can add methods to the custom element's prototype and treat them like an API 
+
+###Hope it helped
+Questions? Comments? Bugs? Thats what the comments are for amigos.
 
 
 
