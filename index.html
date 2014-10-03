@@ -60,13 +60,14 @@
 				scroll-bar-down{
 					position: absolute;
 					right: 0;
+					bottom: 0;
 					width: 15px;
 					height: 15px;
 					background-color: darkgrey;
 				}
 				.scroll-bar.horizontal scroll-bar-down{
 					position: absolute;
-					left: 0;
+					right: 0;
 					width: 15px;
 					height: 15px;
 					background-color: darkgrey;
@@ -87,49 +88,101 @@
 
 				var importDoc = document.currentScript.ownerDocument;
 
-				var scrollBarProto = Object.create(HTMLElement.prototype, {
-					createdCallback: {
-						value: function(){
-							// set up the template 
-							var scrollbarTemplate = importDoc.querySelector('template'),
-									scrollBarImportClone = document.importNode(scrollbarTemplate.content,true),
-									scrollbarShadowRoot = this.createShadowRoot();
+				// An instance of his will become the prototype for the custom scroll-bar
+				// element 
+				var ScrollBar = function(){
+					//var that = this,
+					//		dataModel = {};
 
-							scrollbarShadowRoot.appendChild(scrollBarImportClone);
+					// var handleDataModelChanged = function(changeSet) {
+					// 	console.log('i know you changed it',changeSet, this);	
+					// 	var change = changeSet[0];
+					// 	if(change.name === "current"){
+					// 		var max = change.object.max,
+					// 				current = change.object.current;
 
-							// get the actionable child elements 
-							this.bar = scrollbarShadowRoot.querySelector('.scroll-bar');
-							this.thumb = scrollbarShadowRoot.querySelector('scroll-bar-thumb');
-							this.btnUp = scrollbarShadowRoot.querySelector('scroll-bar-up');
-							this.btnDown = scrollbarShadowRoot.querySelector('scroll-bar-down');
+					// 		if (max){
+					// 			console.log(change.object.current)
+					// 			that.thumb.jumpToPosition(current / max * 100);
+					// 		}
+							
+							
+					// 	}
+					// }.bind(this);
+				};
 
-							this.configureOrientation();
+				ScrollBar.prototype = Object.create(HTMLElement.prototype);
 
+
+				ScrollBar.prototype.setDataModel = function(dataModel) {
+					//var requiredFields = ['max','current'];
+					var that = this;
+					that.dataModel = dataModel;
+					Object.observe(this.dataModel,function(changeSet){
+						var change = changeSet[0];
+						if(change.name === "current"){
+							var max = change.object.max,
+									current = change.object.current;
+
+							if (max){
+								console.log(change.object.current)
+								that.thumb.jumpToPosition(current / max * 100);
+							}
 						}
-					},
-					configureOrientation : {
-						value: function(){
-							//console.log(this.getAttribute('horizontal'), 'horizontal' in this.attributes );
-							var orientation = 'y'; 
+					});
+				};
 
-							if ('horizontal' in this.attributes){
-								orientation = 'x';
-								this.bar.classList.add('horizontal');
-							} 
+				// ScrollBar.prototype.handleDataModelChanged = function(changeSet) {
+				// 	console.log('i know you changed it',changeSet, this);	
+				// 	var change = changeSet[0];
+				// 	if(change.name === "current"){
+				// 		var max = change.object.max,
+				// 				current = change.object.current;
 
-							this.thumb.setOrientation(orientation);
+				// 		if (max){
+				// 			console.log(change.object.current)
+				// 			this.thumb.jumpToPosition(current / max * 100);
+				// 		}
+						
+						
+				// 	}
+				// };
 
-						}
-					},
-					registerScrollMoveCallback: {
-						value: function(callback){
-							this.thumb.registerScrollMoveCallback(function(move) {
-								console.log(move)
-							})
-						}
-					}
-				});
+				// the createdCallback method will be called by the native code 
+				ScrollBar.prototype.attachedCallback = function() {
+					var scrollbarTemplate = importDoc.querySelector('template'),
+							scrollBarImportClone = document.importNode(scrollbarTemplate.content,true),
+							scrollbarShadowRoot = this.createShadowRoot();
+
+					scrollbarShadowRoot.appendChild(scrollBarImportClone);
+
+					// get the actionable child elements 
+					this.bar = scrollbarShadowRoot.querySelector('.scroll-bar');
+					this.thumb = scrollbarShadowRoot.querySelector('scroll-bar-thumb');
+					this.btnUp = scrollbarShadowRoot.querySelector('scroll-bar-up');
+					this.btnDown = scrollbarShadowRoot.querySelector('scroll-bar-down');
+
+					this.configureOrientation();
+				};
+				ScrollBar.prototype.configureOrientation = function() {
+					var orientation = 'y'; 
+
+					if ('horizontal' in this.attributes){
+						orientation = 'x';
+						this.bar.classList.add('horizontal');
+					} 
+
+					this.thumb.setOrientation(orientation);
+				};
+				ScrollBar.prototype.registerScrollMoveCallback = function(callback) {
+					this.thumb.registerScrollMoveCallback(function(move) {
+						
+						callback(move);
+					})
+				};
+				
 				var scrollBarUpProto = Object.create(HTMLElement.prototype, {});
+
 				var scrollBarThumbProto = Object.create(HTMLElement.prototype, {
 					createdCallback : {
 						value : function(event){
@@ -147,8 +200,6 @@
 
 											//account for scroll buttons + thumb 
 											scrollTill =  self.getMaxScroll(); 
-
-									console.log(self.getMaxScroll());
 									
 									//keep the scrolling in range
 									location = (location ) < 0 ? 0 : location;
@@ -190,10 +241,15 @@
 							var direction = this.orientation === 'y' ? 'clientHeight' : 'clientWidth'
 							return this.parentNode[direction] - 50;
 						}
+					},
+					jumpToPosition: {
+						value: function(percent){
+							console.log('jump to conclusions ', percent)
+						}
 					}
 				});
-				var scrollBarDownProto = Object.create(HTMLElement.prototype, {});
 
+				var scrollBarDownProto = Object.create(HTMLElement.prototype, {});
 				
 				document.registerElement('scroll-bar-up', {
 					prototype: scrollBarUpProto
@@ -205,7 +261,7 @@
 					prototype: scrollBarDownProto
 				});
 				document.registerElement('scroll-bar', {
-					prototype: scrollBarProto
+					prototype: new ScrollBar()
 				});
 			})()
 		</script>

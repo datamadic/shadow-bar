@@ -17,9 +17,14 @@
 			<scroll-bar horizontal></scroll-bar>
 		</div>
 		<script>
+			var dm = {
+				max: 70000,
+				current: 0
+			};
+
 			(function(){
 				var sb = document.querySelector('scroll-bar');
-				sb.registerScrollMoveCallback();
+				sb.setDataModel(dm);
 			})()
 		</script>
 	</body>
