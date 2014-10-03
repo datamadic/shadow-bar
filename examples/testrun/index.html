@@ -5,7 +5,7 @@
 		<style>
 			.demo-scroll-surface {
 				width: 300px;
-				height: 500px;
+				height: 100px;
 				background-color: indianred;
 				position: relative;
 			}
@@ -13,7 +13,14 @@
 	</head>
 	<body>
 		<div class="demo-scroll-surface">
-			<scroll-bar draggable="false"></scroll-bar>
+			<scroll-bar ></scroll-bar>
+			<scroll-bar horizontal></scroll-bar>
 		</div>
+		<script>
+			(function(){
+				var sb = document.querySelector('scroll-bar');
+				sb.registerScrollMoveCallback();
+			})()
+		</script>
 	</body>
 </html>

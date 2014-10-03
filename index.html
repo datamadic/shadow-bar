@@ -4,45 +4,128 @@
 		<link title="scrollbar" rel="import" href="../components/scrollbar.html">
 	</head>
 	<body>
+
+		<template>
+			<style>
+				.scroll-bar {
+					width: 15px;
+					background-color: lightgrey;
+					position: absolute;
+					top:0;
+					left:100%;
+					bottom:0;
+				}
+				.scroll-bar.horizontal {
+					height: 15px;
+					width: 100%;
+					background-color: gold;
+					position: absolute;
+					left:0;
+					right: 100%;
+					top:100%;
+				}
+
+				scroll-bar-up{
+					position: absolute;
+					top: 0;
+					width: 15px;
+					height: 15px;
+					background-color: darkgrey;
+				}
+				
+				.scroll-bar.horizontal scroll-bar-up{
+					position: absolute;
+					top: 0;
+					width: 15px;
+					height: 15px;
+					background-color: darkgrey;
+				}
+
+				scroll-bar-thumb {
+					background-color: steelblue;
+					width: 15px;
+					height: 20px;
+					top: 15px;
+					position: absolute;
+				}
+				.scroll-bar.horizontal scroll-bar-thumb {
+					background-color: steelblue;
+					height: 15px;
+					width: 20px;
+					left: 15px;
+					top: 0;
+					position: absolute;
+				}
+
+				scroll-bar-down{
+					position: absolute;
+					right: 0;
+					width: 15px;
+					height: 15px;
+					background-color: darkgrey;
+				}
+				.scroll-bar.horizontal scroll-bar-down{
+					position: absolute;
+					left: 0;
+					width: 15px;
+					height: 15px;
+					background-color: darkgrey;
+				}
+				
+			</style>
+			<div class="scroll-bar">
+				<scroll-bar-up></scroll-bar-up>
+				<scroll-bar-thumb draggable="false"></scroll-bar-thumb>
+				<scroll-bar-down></scroll-bar-down>
+			</div>
+		</template>
 		
 		<script>
 
 			//register the scrollbar elements
 			(function(){
-				console.log('i run on import');
-				console.log(document.querySelectorAll('script'))
 
-				var componentLink = document.createElement('link');
-				
-				componentLink.title = 'scrollbar';
-				componentLink.rel = 'import';
-				componentLink.href = '../../components/scrollbar.html';
-
-				document.head.appendChild(componentLink);
-
+				var importDoc = document.currentScript.ownerDocument;
 
 				var scrollBarProto = Object.create(HTMLElement.prototype, {
 					createdCallback: {
 						value: function(){
 							// set up the template 
-							var scrollbarImport = document.querySelector('link[title="scrollbar"]').import,
-									scrollbarTemplate = scrollbarImport.querySelector('template'),
+							var scrollbarTemplate = importDoc.querySelector('template'),
 									scrollBarImportClone = document.importNode(scrollbarTemplate.content,true),
 									scrollbarShadowRoot = this.createShadowRoot();
 
 							scrollbarShadowRoot.appendChild(scrollBarImportClone);
 
 							// get the actionable child elements 
+							this.bar = scrollbarShadowRoot.querySelector('.scroll-bar');
 							this.thumb = scrollbarShadowRoot.querySelector('scroll-bar-thumb');
 							this.btnUp = scrollbarShadowRoot.querySelector('scroll-bar-up');
 							this.btnDown = scrollbarShadowRoot.querySelector('scroll-bar-down');
+
+							this.configureOrientation();
+
+						}
+					},
+					configureOrientation : {
+						value: function(){
+							//console.log(this.getAttribute('horizontal'), 'horizontal' in this.attributes );
+							var orientation = 'y'; 
+
+							if ('horizontal' in this.attributes){
+								orientation = 'x';
+								this.bar.classList.add('horizontal');
+							} 
+
+							this.thumb.setOrientation(orientation);
 
 						}
 					},
 					registerScrollMoveCallback: {
 						value: function(callback){
-							var thumb = this.querySelector('scroll-bar-thumb');
-							this.scrollMoveCallback = callback;
+							this.thumb.registerScrollMoveCallback(function(move) {
+								console.log(move)
+							})
 						}
 					}
 				});
@@ -56,21 +139,24 @@
 
 							this.addEventListener('mousedown',function(event){
 								self.isScrolling = true;						
-								self.initialLocation = event.y;
+								self.initialLocation = event[self.orientation];
 							});
 							document.addEventListener('mousemove',function(event){
 								if (self.isScrolling) {
-									var location = event.y - self.initialLocation + (self.translatedY || 0),
+									var location = event[self.orientation] - self.initialLocation + (self.translated || 0),
 
-											//account for scroll buttons + thumb height
-											scrollTill =  self.parentNode.clientHeight - 50; 
+											//account for scroll buttons + thumb 
+											scrollTill =  self.getMaxScroll(); 
+
+									console.log(self.getMaxScroll());
 									
 									//keep the scrolling in range
 									location = (location ) < 0 ? 0 : location;
 									location = (location ) > scrollTill ? scrollTill : location;
 
 									requestAnimationFrame(function(){
-										self.style.webkitTransform = 'translateY('+ location +'px)';
+										var axis = self.orientation.toUpperCase();
+										self.style.webkitTransform = 'translate'+axis+'('+ location +'px)';
 										if(self.scrollMoveCallback){
 											self.scrollMoveCallback({
 												event: event,
@@ -83,7 +169,7 @@
 							document.addEventListener('mouseup',function(event){
 								if(self.isScrolling) {
 									self.isScrolling = false;
-									self.translatedY = event.y - self.initialLocation + (self.translatedY || 0);
+									self.translated = event[self.orientation] - self.initialLocation + (self.translated || 0);
 								}
 							});
 						}
@@ -91,6 +177,18 @@
 					registerScrollMoveCallback: {
 						value: function(callback){
 							this.scrollMoveCallback = callback;
+						}
+					},
+					setOrientation : {
+						value: function(orientation){
+							console.log('this is the orientation', orientation);
+							this.orientation = orientation;
+						}
+					},
+					getMaxScroll :{
+						value: function(){
+							var direction = this.orientation === 'y' ? 'clientHeight' : 'clientWidth'
+							return this.parentNode[direction] - 50;
 						}
 					}
 				});
