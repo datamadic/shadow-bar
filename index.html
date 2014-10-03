@@ -90,35 +90,16 @@
 
 				// An instance of his will become the prototype for the custom scroll-bar
 				// element 
-				var ScrollBar = function(){
-					//var that = this,
-					//		dataModel = {};
-
-					// var handleDataModelChanged = function(changeSet) {
-					// 	console.log('i know you changed it',changeSet, this);	
-					// 	var change = changeSet[0];
-					// 	if(change.name === "current"){
-					// 		var max = change.object.max,
-					// 				current = change.object.current;
-
-					// 		if (max){
-					// 			console.log(change.object.current)
-					// 			that.thumb.jumpToPosition(current / max * 100);
-					// 		}
-							
-							
-					// 	}
-					// }.bind(this);
-				};
+				var ScrollBar = function(){};
 
 				ScrollBar.prototype = Object.create(HTMLElement.prototype);
 
 
 				ScrollBar.prototype.setDataModel = function(dataModel) {
-					//var requiredFields = ['max','current'];
 					var that = this;
 					that.dataModel = dataModel;
-					Object.observe(this.dataModel,function(changeSet){
+
+					Object.observe(that.dataModel,function(changeSet){
 						var change = changeSet[0];
 						if(change.name === "current"){
 							var max = change.object.max,

@@ -19,12 +19,18 @@
 		<script>
 			var dm = {
 				max: 70000,
-				current: 0
+				current: 0,
+				min: 0,
+				step: 1,//smallest increment
+				page: 40 //data lines per page 
 			};
 
 			(function(){
 				var sb = document.querySelector('scroll-bar');
 				sb.setDataModel(dm);
+				sb.registerScrollMoveCallback(function(move){
+					console.log(move)
+				});
 			})()
 		</script>
 	</body>
