@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 	<head>
-		<link title="scrollbar" rel="import" href="../components/scrollbar.html">
+		
 	</head>
 	<body>
 
@@ -113,21 +113,6 @@
 					});
 				};
 
-				// ScrollBar.prototype.handleDataModelChanged = function(changeSet) {
-				// 	console.log('i know you changed it',changeSet, this);	
-				// 	var change = changeSet[0];
-				// 	if(change.name === "current"){
-				// 		var max = change.object.max,
-				// 				current = change.object.current;
-
-				// 		if (max){
-				// 			console.log(change.object.current)
-				// 			this.thumb.jumpToPosition(current / max * 100);
-				// 		}
-						
-						
-				// 	}
-				// };
 
 				// the createdCallback method will be called by the native code 
 				ScrollBar.prototype.attachedCallback = function() {
@@ -167,44 +152,55 @@
 				var scrollBarThumbProto = Object.create(HTMLElement.prototype, {
 					createdCallback : {
 						value : function(event){
-							var self = this;
+							var that = this;
 
-							self.isScrolling = false;
+							that.isScrolling = false;
 
 							this.addEventListener('mousedown',function(event){
-								self.isScrolling = true;						
-								self.initialLocation = event[self.orientation];
+								that.isScrolling = true;						
+								that.initialLocation = event[that.orientation];
 							});
 							document.addEventListener('mousemove',function(event){
-								if (self.isScrolling) {
-									var location = event[self.orientation] - self.initialLocation + (self.translated || 0),
+								if (that.isScrolling) {
+									var location = event[that.orientation] - that.initialLocation + (that.translated || 0);
 
-											//account for scroll buttons + thumb 
-											scrollTill =  self.getMaxScroll(); 
-									
-									//keep the scrolling in range
-									location = (location ) < 0 ? 0 : location;
-									location = (location ) > scrollTill ? scrollTill : location;
-
-									requestAnimationFrame(function(){
-										var axis = self.orientation.toUpperCase();
-										self.style.webkitTransform = 'translate'+axis+'('+ location +'px)';
-										if(self.scrollMoveCallback){
-											self.scrollMoveCallback({
-												event: event,
-												percent: location / scrollTill * 100
-											});
-										}
-									});	
-								}
+									that.moveThumb(location);
+								 }
 							});
 							document.addEventListener('mouseup',function(event){
-								if(self.isScrolling) {
-									self.isScrolling = false;
-									self.translated = event[self.orientation] - self.initialLocation + (self.translated || 0);
+								if(that.isScrolling) {
+									that.isScrolling = false;
+									that.translated = event[that.orientation] - that.initialLocation + (that.translated || 0);
 								}
 							});
 						}
+					},
+					moveThumb: {
+						value: function(location){
+							var that = this,
+									range =  that.getMaxScroll(); 
+
+							//keep the scrolling in range
+							// location = (location ) < 0 ? 0 : location;
+							// location = (location ) > range ? range : location;
+							// console.log(location, that.translated);
+							// location = location / range * 100;
+							location = (location ) < 0 ? 0 : location;
+							location = (location ) > range ? range : location;
+
+							//console.log('the percent', location / range * 100);
+
+							requestAnimationFrame(function(){
+								var axis = that.orientation.toUpperCase();
+								that.style.webkitTransform = 'translate'+axis+'('+ location +'px)';
+								if(that.scrollMoveCallback){
+									that.scrollMoveCallback({
+										event: event,
+										percent: location / range * 100
+									});
+								}
+							});	
+						}//end movethumb value
 					},
 					registerScrollMoveCallback: {
 						value: function(callback){

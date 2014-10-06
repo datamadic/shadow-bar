@@ -25,13 +25,15 @@
 				page: 40 //data lines per page 
 			};
 
-			(function(){
-				var sb = document.querySelector('scroll-bar');
-				sb.setDataModel(dm);
-				sb.registerScrollMoveCallback(function(move){
-					console.log(move)
-				});
-			})()
+			var sb = document.querySelector('scroll-bar');
+
+			// (function(){
+			// 	var sb = document.querySelector('scroll-bar');
+			// 	// sb.setDataModel(dm);
+			// 	// sb.registerScrollMoveCallback(function(move){
+			// 	// 	console.log(move)
+			// 	// });
+			// })()
 		</script>
 	</body>
 </html>
