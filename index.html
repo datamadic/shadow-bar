@@ -195,14 +195,16 @@
 				};
 
 
-				ScrollBar.prototype.registerScrollMoveCallback = function(callback) {
-					var that = this;
+				// we only talk value models now 
+				
+				// ScrollBar.prototype.registerScrollMoveCallback = function(callback) {
+				// 	var that = this;
 
-					this.thumb.registerScrollMoveCallback(function(move) {
+				// 	this.thumb.registerScrollMoveCallback(function(move) {
 						
-						callback(move);
-					})
-				};
+				// 		callback(move);
+				// 	})
+				// };
 
 				var scrollBarUpProto = Object.create(HTMLElement.prototype, {});
 
@@ -228,10 +230,7 @@
 								if(that.isScrolling) {
 									that.isScrolling = false;
 									that.translated = event[that.orientation] - that.initialLocation + (that.translated || 0);
-									if (that.rangeAdapter){
-										console.log('ill set you', location / that.getMaxScroll());
-										that.rangeAdapter.valueObj.value = location / that.getMaxScroll();
-									}
+									
 								}
 							});
 						}
@@ -249,21 +248,20 @@
 							requestAnimationFrame(function(){
 								var axis = that.orientation.toUpperCase();
 								that.style.webkitTransform = 'translate'+axis+'('+ location +'px)';
-								
-								if(that.scrollMoveCallback){
-									that.scrollMoveCallback({
-										event: event,
-										percent: location / range * 100
-									});
+
+								if (that.rangeAdapter){
+									console.log('ill set you', location / that.getMaxScroll());
+									that.rangeAdapter.valueObj.value = location / that.getMaxScroll();
 								}
 							});	
 						}//end movethumb value
 					},
 					moveToPercent: {
 						value: function(percent){
-							console.log('mooooving to this percent ', percent);
-
-							this.moveThumb(percent * this.getMaxScroll());
+							// if already dragging, dont respect the observable value sets
+							if (!that.isScrolling) {
+								this.moveThumb(percent * this.getMaxScroll());
+							}
 						}
 					},
 					getLcoation: {
@@ -271,11 +269,12 @@
 							return (that.translated || 0) / that.getMaxScroll() * 100;
 						}
 					},
-					registerScrollMoveCallback: {
-						value: function(callback){
-							this.scrollMoveCallback = callback;
-						}
-					},
+					// we only talk value models here now 
+					// registerScrollMoveCallback: {
+					// 	value: function(callback){
+					// 		this.scrollMoveCallback = callback;
+					// 	}
+					// },
 					setValueUpdatedCallback: {
 						value: function(callback){
 							this.valueUpdatedCallback = callback;
