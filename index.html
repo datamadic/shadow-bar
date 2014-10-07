@@ -83,6 +83,64 @@
 		
 		<script>
 
+
+			// Adapted form http://live.exept.de/ClassDoc/classDocOf:,RangeAdaptor
+			// Range Adaptor is a kind of UpdateAdaptor that can be used to turn an 
+			// arbitrary number (either an Integer or a Float) into a Float normalized between
+			// 0 and 1.
+			var RangeAdapter = function(subjectValue, start, stop, gridValue){
+				var that = this,
+						value = subjectValue,
+						rangeStart = start, 
+						rangeStop = stop, 
+						grid = gridValue;
+
+				// this is the 'cached' value that is listenable
+				that.valueObj = {value:null};
+
+				Object.observe(value,function(changeSet){
+					console.log(changeSet);
+					that.valueObj.value = that.getValue(changeSet[0].object.value);
+					console.log(value); 
+				});
+
+				that.grid = function(value){
+					if (value === undefined) {
+						return grid;
+					}
+					grid = value;
+				};
+
+				that.rangeStart = function(value){
+					if(value === undefined){
+						return rangeStart;
+					}
+				};
+
+				that.rangeStop = function(value){
+					if (value === undefined){
+						return rangeStop;
+					}
+				};
+
+				// @param value is a number
+				that.setValue = function(newValue){
+					if (!typeof value === 'number'){
+						return;
+					}
+					value = newValue;
+				};
+
+				
+				that.getValue = function(subjectValue){
+					value = (subjectValue - rangeStart) / (rangeStop - rangeStart);
+					return value;
+				};
+
+			};
+
+
+
 			//register the scrollbar elements
 			(function(){
 
@@ -90,29 +148,23 @@
 
 				// An instance of his will become the prototype for the custom scroll-bar
 				// element 
-				var ScrollBar = function(){};
+				var ScrollBar = function(){
+				};
 
 				ScrollBar.prototype = Object.create(HTMLElement.prototype);
 
-
-				ScrollBar.prototype.setDataModel = function(dataModel) {
+				ScrollBar.prototype.setRangeAdapter = function(rangeAdapter) {
 					var that = this;
-					that.dataModel = dataModel;
 
-					Object.observe(that.dataModel,function(changeSet){
-						var change = changeSet[0];
-						if(change.name === "current"){
-							var max = change.object.max,
-									current = change.object.current;
+					that.rangeAdapter = rangeAdapter;
+					that.thumb.rangeAdapter = rangeAdapter;
 
-							if (max){
-								console.log(change.object.current)
-								that.thumb.jumpToPosition(current / max * 100);
-							}
-						}
+					Object.observe(rangeAdapter.valueObj, function(change){
+						that.thumb.moveToPercent(change[0].object.value)
 					});
-				};
 
+
+				};
 
 				// the createdCallback method will be called by the native code 
 				ScrollBar.prototype.attachedCallback = function() {
@@ -130,6 +182,7 @@
 
 					this.configureOrientation();
 				};
+
 				ScrollBar.prototype.configureOrientation = function() {
 					var orientation = 'y'; 
 
@@ -140,13 +193,17 @@
 
 					this.thumb.setOrientation(orientation);
 				};
+
+
 				ScrollBar.prototype.registerScrollMoveCallback = function(callback) {
+					var that = this;
+
 					this.thumb.registerScrollMoveCallback(function(move) {
 						
 						callback(move);
 					})
 				};
-				
+
 				var scrollBarUpProto = Object.create(HTMLElement.prototype, {});
 
 				var scrollBarThumbProto = Object.create(HTMLElement.prototype, {
@@ -171,28 +228,28 @@
 								if(that.isScrolling) {
 									that.isScrolling = false;
 									that.translated = event[that.orientation] - that.initialLocation + (that.translated || 0);
+									if (that.rangeAdapter){
+										console.log('ill set you', location / that.getMaxScroll());
+										that.rangeAdapter.valueObj.value = location / that.getMaxScroll();
+									}
 								}
 							});
 						}
 					},
 					moveThumb: {
 						value: function(location){
+
 							var that = this,
 									range =  that.getMaxScroll(); 
 
 							//keep the scrolling in range
-							// location = (location ) < 0 ? 0 : location;
-							// location = (location ) > range ? range : location;
-							// console.log(location, that.translated);
-							// location = location / range * 100;
 							location = (location ) < 0 ? 0 : location;
 							location = (location ) > range ? range : location;
-
-							//console.log('the percent', location / range * 100);
 
 							requestAnimationFrame(function(){
 								var axis = that.orientation.toUpperCase();
 								that.style.webkitTransform = 'translate'+axis+'('+ location +'px)';
+								
 								if(that.scrollMoveCallback){
 									that.scrollMoveCallback({
 										event: event,
@@ -202,9 +259,26 @@
 							});	
 						}//end movethumb value
 					},
+					moveToPercent: {
+						value: function(percent){
+							console.log('mooooving to this percent ', percent);
+
+							this.moveThumb(percent * this.getMaxScroll());
+						}
+					},
+					getLcoation: {
+						value: function(){
+							return (that.translated || 0) / that.getMaxScroll() * 100;
+						}
+					},
 					registerScrollMoveCallback: {
 						value: function(callback){
 							this.scrollMoveCallback = callback;
+						}
+					},
+					setValueUpdatedCallback: {
+						value: function(callback){
+							this.valueUpdatedCallback = callback;
 						}
 					},
 					setOrientation : {
@@ -217,11 +291,6 @@
 						value: function(){
 							var direction = this.orientation === 'y' ? 'clientHeight' : 'clientWidth'
 							return this.parentNode[direction] - 50;
-						}
-					},
-					jumpToPosition: {
-						value: function(percent){
-							console.log('jump to conclusions ', percent)
 						}
 					}
 				});
@@ -241,6 +310,7 @@
 					prototype: new ScrollBar()
 				});
 			})()
+
 		</script>
 	</body>
 </html>

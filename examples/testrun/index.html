@@ -17,6 +17,7 @@
 			<scroll-bar horizontal></scroll-bar>
 		</div>
 		<script>
+
 			var dm = {
 				max: 70000,
 				current: 0,
@@ -25,7 +26,7 @@
 				page: 40 //data lines per page 
 			};
 
-			var sb = document.querySelector('scroll-bar');
+			//var sb = document.querySelector('scroll-bar');
 
 			// (function(){
 			// 	var sb = document.querySelector('scroll-bar');
@@ -34,6 +35,13 @@
 			// 	// 	console.log(move)
 			// 	// });
 			// })()
+
+		var demoValueSubject = {value: 0};
+		var demoRA = new RangeAdapter(demoValueSubject, 0, 35, 5);
+		var sb = document.querySelector('scroll-bar');
+		console.log(sb);
+		sb.setRangeAdapter(demoRA);
+
 		</script>
 	</body>
 </html>
