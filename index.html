@@ -211,7 +211,7 @@
 					// get the actionable child elements
 					this.bar = scrollbarShadowRoot.querySelector('.scroll-bar');
 					this.thumb = scrollbarShadowRoot.querySelector('scroll-bar-thumb');
-                    			this.thumb.rangeAdapter = this.rangeAdapter;
+                    this.thumb.rangeAdapter = this.rangeAdapter;
 					this.btnUp = scrollbarShadowRoot.querySelector('scroll-bar-up');
 					this.btnDown = scrollbarShadowRoot.querySelector('scroll-bar-down');
 
@@ -274,22 +274,22 @@
 						value: function(location){
 
 							var that = this,
-							range =  that.getMaxScroll();
+								range =  that.getMaxScroll();
 
 							//keep the scrolling in range
 							location = (location ) < 0 ? 0 : location;
 							location = (location ) > range ? range : location;
 
-                            				var percent = location / that.getMaxScroll();
-                            				this.lastPercent = percent;
+                            var percent = location / that.getMaxScroll();
+                            this.lastPercent = percent;
 
-                            				var direction = this.orientation === 'y' ? 'top' : 'left'
+                            var direction = this.orientation === 'y' ? 'top' : 'left'
 
 							requestAnimationFrame(function(){
 								var axis = that.orientation.toUpperCase();
 								//that.style.webkitTransform = 'translate'+axis+'('+ location +'px)';
 
-                                				that.style[direction] = (100 * percent) + '%';
+                                that.style[direction] = (100 * percent) + '%';
 
 							});
 
@@ -335,6 +335,7 @@
 						}
 					}
 				});
+                scrollBarThumbProto.lastPercent = 0.0;
 
 				var scrollBarDownProto = Object.create(HTMLElement.prototype, {});
 
