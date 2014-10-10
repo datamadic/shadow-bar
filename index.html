@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 	<head>
-		
+
 	</head>
 	<body>
 
@@ -9,50 +9,72 @@
 			<style>
 				.scroll-bar {
 					width: 15px;
-					background-color: lightgrey;
 					position: absolute;
 					top:0;
-					left:100%;
 					bottom:0;
+                    background-color: lightgrey;
 				}
+                .scroll-gutter {
+                    position: absolute;
+                    top: 0%;
+                    bottom: 0%;
+                    right: 0%;
+                    left: 0%;
+                    margin-top: 15px;
+                    margin-bottom: 35px;
+                }
 				.scroll-bar.horizontal {
 					height: 15px;
 					width: 100%;
-					background-color: gold;
 					position: absolute;
 					left:0;
 					right: 100%;
 					top:100%;
 				}
 
+                .horizontal .scroll-gutter {
+                    position: absolute;
+                    top: 0%;
+                    bottom: 0%;
+                    right: 0%;
+                    left: 0%;
+                    margin-top: 0px;
+                    margin-bottom: 0px;
+                    margin-left: 15px;
+                    margin-right: 35px;
+                }
+
 				scroll-bar-up{
 					position: absolute;
 					top: 0;
+                    left: 0;
 					width: 15px;
 					height: 15px;
 					background-color: darkgrey;
 				}
-				
+
 				.scroll-bar.horizontal scroll-bar-up{
 					position: absolute;
 					top: 0;
+                    right: 0;
+                    left: auto;
 					width: 15px;
 					height: 15px;
 					background-color: darkgrey;
 				}
 
 				scroll-bar-thumb {
-					background-color: steelblue;
+					background-color: gray;
 					width: 15px;
 					height: 20px;
-					top: 15px;
+					top: 0;
+                    left: 0px;
 					position: absolute;
 				}
 				.scroll-bar.horizontal scroll-bar-thumb {
-					background-color: steelblue;
 					height: 15px;
 					width: 20px;
-					left: 15px;
+					left: 0px;
 					top: 0;
 					position: absolute;
 				}
@@ -67,42 +89,48 @@
 				}
 				.scroll-bar.horizontal scroll-bar-down{
 					position: absolute;
-					right: 0;
+                    left: 0;
 					width: 15px;
 					height: 15px;
 					background-color: darkgrey;
 				}
-				
-			</style>
-			<div class="scroll-bar">
-				<scroll-bar-up></scroll-bar-up>
-				<scroll-bar-thumb draggable="false"></scroll-bar-thumb>
-				<scroll-bar-down></scroll-bar-down>
-			</div>
+
+		</style>
+            <div class="scroll-bar">
+                <scroll-bar-up></scroll-bar-up>
+                        <div class="scroll-gutter">
+                            <scroll-bar-thumb draggable="false"></scroll-bar-thumb>
+                        </div>
+                <scroll-bar-down></scroll-bar-down>
+            </div>
 		</template>
-		
+
 		<script>
 
 
 			// Adapted form http://live.exept.de/ClassDoc/classDocOf:,RangeAdaptor
-			// Range Adaptor is a kind of UpdateAdaptor that can be used to turn an 
+			// Range Adaptor is a kind of UpdateAdaptor that can be used to turn an
 			// arbitrary number (either an Integer or a Float) into a Float normalized between
 			// 0 and 1.
-			var RangeAdapter = function(subjectValue, start, stop, gridValue){
-				var that = this,
-						value = subjectValue,
-						rangeStart = start, 
-						rangeStop = stop, 
-						grid = gridValue;
+			window.RangeAdapter = function(subject, userConfig){
+                var config = userConfig || {
+                    step: 1,
+                    page: 40,
+                    rangeStart: 0,
+                    rangeStop: 100
+                },
+				that = this;
 
 				// this is the 'cached' value that is listenable
 				that.valueObj = {value:null};
 
-				Object.observe(value,function(changeSet){
-					console.log(changeSet);
-					that.valueObj.value = that.getValue(changeSet[0].object.value);
-					console.log(value); 
+				Object.observe(subject,function(changeSet){
+					that.subjectChanged();
 				});
+
+                that.subjectChanged = function() {
+                    that.valueObj = that.computeNormalizedValue();
+                }
 
 				that.grid = function(value){
 					if (value === undefined) {
@@ -128,13 +156,16 @@
 					if (!typeof value === 'number'){
 						return;
 					}
-					value = newValue;
+                    var deNormalized = Math.floor((newValue * (config.rangeStop - config.rangeStart)) + config.rangeStart);
+					subject.setValue(deNormalized);
 				};
+                that.computeNormalizedValue = function() {
+                    value = (subject.getValue() - config.rangeStart) / (config.rangeStop - config.rangeStart);
+                    return value;
+                };
 
-				
-				that.getValue = function(subjectValue){
-					value = (subjectValue - rangeStart) / (rangeStop - rangeStart);
-					return value;
+				that.getValue = function(){
+					return valueObj.value;
 				};
 
 			};
@@ -147,18 +178,21 @@
 				var importDoc = document.currentScript.ownerDocument;
 
 				// An instance of his will become the prototype for the custom scroll-bar
-				// element 
+				// element
 				var ScrollBar = function(){
 				};
 
 				ScrollBar.prototype = Object.create(HTMLElement.prototype);
 
+                ScrollBar.prototype.RangeAdapter = RangeAdapter;
+
 				ScrollBar.prototype.setRangeAdapter = function(rangeAdapter) {
 					var that = this;
 
 					that.rangeAdapter = rangeAdapter;
-					that.thumb.rangeAdapter = rangeAdapter;
-
+                    if (that.thumb) {
+                        that.thumb.rangeAdapter = rangeAdapter;
+                    }
 					Object.observe(rangeAdapter.valueObj, function(change){
 						that.thumb.moveToPercent(change[0].object.value)
 					});
@@ -166,7 +200,7 @@
 
 				};
 
-				// the createdCallback method will be called by the native code 
+				// the createdCallback method will be called by the native code
 				ScrollBar.prototype.attachedCallback = function() {
 					var scrollbarTemplate = importDoc.querySelector('template'),
 							scrollBarImportClone = document.importNode(scrollbarTemplate.content,true),
@@ -174,9 +208,10 @@
 
 					scrollbarShadowRoot.appendChild(scrollBarImportClone);
 
-					// get the actionable child elements 
+					// get the actionable child elements
 					this.bar = scrollbarShadowRoot.querySelector('.scroll-bar');
 					this.thumb = scrollbarShadowRoot.querySelector('scroll-bar-thumb');
+                    			this.thumb.rangeAdapter = this.rangeAdapter;
 					this.btnUp = scrollbarShadowRoot.querySelector('scroll-bar-up');
 					this.btnDown = scrollbarShadowRoot.querySelector('scroll-bar-down');
 
@@ -184,24 +219,27 @@
 				};
 
 				ScrollBar.prototype.configureOrientation = function() {
-					var orientation = 'y'; 
+					var orientation = 'y';
 
 					if ('horizontal' in this.attributes){
 						orientation = 'x';
 						this.bar.classList.add('horizontal');
-					} 
+					}
 
 					this.thumb.setOrientation(orientation);
 				};
+                ScrollBar.prototype.tickle = function() {
+                    this.rangeAdapter.setValue(this.thumb.lastPercent);
+                }
 
 
-				// we only talk value models now 
-				
+				// we only talk value models now
+
 				// ScrollBar.prototype.registerScrollMoveCallback = function(callback) {
 				// 	var that = this;
 
 				// 	this.thumb.registerScrollMoveCallback(function(move) {
-						
+
 				// 		callback(move);
 				// 	})
 				// };
@@ -212,16 +250,15 @@
 					createdCallback : {
 						value : function(event){
 							var that = this;
-
+                            var bounds = that.getBoundingClientRect();
 							that.isScrolling = false;
 
 							this.addEventListener('mousedown',function(event){
-								that.isScrolling = true;						
-								that.initialLocation = event[that.orientation];
+								that.isScrolling = true;
 							});
 							document.addEventListener('mousemove',function(event){
 								if (that.isScrolling) {
-									var location = event[that.orientation] - that.initialLocation + (that.translated || 0);
+									var location = event[that.orientation] - bounds.top - 35;
 
 									that.moveThumb(location);
 								 }
@@ -229,8 +266,6 @@
 							document.addEventListener('mouseup',function(event){
 								if(that.isScrolling) {
 									that.isScrolling = false;
-									that.translated = event[that.orientation] - that.initialLocation + (that.translated || 0);
-									
 								}
 							});
 						}
@@ -239,21 +274,28 @@
 						value: function(location){
 
 							var that = this,
-									range =  that.getMaxScroll(); 
+							range =  that.getMaxScroll();
 
 							//keep the scrolling in range
 							location = (location ) < 0 ? 0 : location;
 							location = (location ) > range ? range : location;
 
+                            				var percent = location / that.getMaxScroll();
+                            				this.lastPercent = percent;
+
+                            				var direction = this.orientation === 'y' ? 'top' : 'left'
+
 							requestAnimationFrame(function(){
 								var axis = that.orientation.toUpperCase();
-								that.style.webkitTransform = 'translate'+axis+'('+ location +'px)';
+								//that.style.webkitTransform = 'translate'+axis+'('+ location +'px)';
 
-								if (that.rangeAdapter){
-									console.log('ill set you', location / that.getMaxScroll());
-									that.rangeAdapter.valueObj.value = location / that.getMaxScroll();
-								}
-							});	
+                                				that.style[direction] = (100 * percent) + '%';
+
+							});
+
+                            if (that.rangeAdapter){
+                                that.rangeAdapter.setValue(percent);
+                            }
 						}//end movethumb value
 					},
 					moveToPercent: {
@@ -264,12 +306,12 @@
 							}
 						}
 					},
-					getLcoation: {
+					getLocation: {
 						value: function(){
-							return (that.translated || 0) / that.getMaxScroll() * 100;
+							return 0 / that.getMaxScroll() * 100;
 						}
 					},
-					// we only talk value models here now 
+					// we only talk value models here now
 					// registerScrollMoveCallback: {
 					// 	value: function(callback){
 					// 		this.scrollMoveCallback = callback;
@@ -289,13 +331,13 @@
 					getMaxScroll :{
 						value: function(){
 							var direction = this.orientation === 'y' ? 'clientHeight' : 'clientWidth'
-							return this.parentNode[direction] - 50;
+							return this.parentNode[direction];
 						}
 					}
 				});
 
 				var scrollBarDownProto = Object.create(HTMLElement.prototype, {});
-				
+
 				document.registerElement('scroll-bar-up', {
 					prototype: scrollBarUpProto
 				});
