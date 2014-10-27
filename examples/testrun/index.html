@@ -26,21 +26,75 @@
 				page: 40 //data lines per page 
 			};
 
-			//var sb = document.querySelector('scroll-bar');
+		var self = {
+			getVScrollValue: function(){
+				return 1;
+			},
+			setVScrollValue : function(value){
+				return 'set me to' + value;
+			},
+			getHScrollValue: function(){
+				return 1;
+			},
+			setHScrollValue : function(value){
+				return 'set me to' + value;
+			}
+		};
 
-			// (function(){
-			// 	var sb = document.querySelector('scroll-bar');
-			// 	// sb.setDataModel(dm);
-			// 	// sb.registerScrollMoveCallback(function(move){
-			// 	// 	console.log(move)
-			// 	// });
-			// })()
+		var scrollbars = document.querySelectorAll('scroll-bar');
+		var hscroller = scrollbars[1],
+				vscroller = scrollbars[0];
 
-		var demoValueSubject = {value: 0};
-		var demoRA = new RangeAdapter(demoValueSubject, 0, 35, 5);
-		var sb = document.querySelector('scroll-bar');
-		console.log(sb);
-		sb.setRangeAdapter(demoRA);
+		console.log(scrollbars);
+
+    var vscroller = scrollbars[1];
+    var hScrollConfig = {
+        step: 1,
+        page: 40,
+        rangeStart: 0,
+        rangeStop: 0
+    };
+    var vScrollConfig = {
+        step: 1,
+        page: 40,
+        rangeStart: 0,
+        rangeStop: 0
+    };
+
+    var hValueHolder = {
+        changed: false,
+        getValue: function() {
+            return self.getHScrollValue();
+        },
+        setValue: function(v) {
+            return self.setHScrollValue(v);
+        },
+    };
+
+    hscroller.setRangeAdapter(new RangeAdapter(hValueHolder, hScrollConfig));
+
+    var scrollConfigs = {
+        vertical: vScrollConfig,
+        horizontal: hScrollConfig
+    };
+
+    var vValueHolder = {
+        getValue: function() {
+            return self.getVScrollValue();
+        },
+        setValue: function(v) {
+            return self.setVScrollValue(v);
+        },
+    };
+
+    vscroller.setRangeAdapter(new RangeAdapter(vValueHolder, vScrollConfig));
+
+
+		// var demoValueSubject = {value: 0};
+		// var demoRA = new RangeAdapter(demoValueSubject, 0, 35, 5);
+		// var sb = document.querySelector('scroll-bar');
+		// console.log(sb);
+		// sb.setRangeAdapter(demoRA);
 
 		</script>
 	</body>
