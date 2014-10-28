@@ -32,7 +32,7 @@ TODO:
   Add support for Object.prototype.watch -> https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/watch
 */
 
-if(!Object.observe2){
+if(!Object.observe){
   (function(extend, global){
     "use strict";
     var isCallable = (function(toString){

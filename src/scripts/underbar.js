@@ -43,8 +43,6 @@ if (window){ //jshint ignore:line
     };
 }
 
-console.log('yeppers')
-
 
 
 
