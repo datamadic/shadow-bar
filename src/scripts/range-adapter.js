@@ -22,7 +22,7 @@ RangeAdapter = function(subject, userConfig) {
 
     that.subjectChanged = function() {
         that.valueObj.value = that.computeNormalizedValue();
-    }
+    };
 
     that.grid = function(value) {
         if (value === undefined) {
@@ -68,3 +68,5 @@ RangeAdapter = function(subject, userConfig) {
     };
 
 };
+
+module.exports.RangeAdapter = RangeAdapter;

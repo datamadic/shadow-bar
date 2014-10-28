@@ -13,7 +13,7 @@ module.exports = function(grunt) {
         watch: {
             js: {
                 files: ['{,*/}*.js'],
-                tasks: ['jsbeautifier', 'jshint', 'docco'],
+                tasks: ['jsbeautifier', 'docco'],
                 options: {
                     livereload: true
                 }
@@ -109,16 +109,62 @@ module.exports = function(grunt) {
                 },
                 src: ['tests/{,*/}*.js']
             }
+        },
+        jst: {
+            compile: {
+                options: {
+                    namespace: 'OPENGRID',
+                    processName: function(filepath) {
+                        var fChop = filepath.lastIndexOf('/') + 1;
+                        var lChop = filepath.length - 5;
+                        var name = filepath.substring(fChop, lChop);
+                        return name;
+                    }
+                },
+                files: {
+                    'src/scripts/templates.js': ['src/templates/{,*/}*.html']
+                }
+            }
+        },
+        replace: {
+            jstfix: {
+                src: ['src/scripts/templates.js'],
+                overwrite: true, // overwrite matched source files
+                replacements: [{
+                    from: 'this["OPENGRID"]',
+                    to: 'module.exports'
+                }]
+            }
+        },
+        browserify: {
+            dist: {
+                files: {
+                    'build/scripts/scrollbar.js': ['src/scripts/*.js']
+                }
+                // ,
+                // options: {
+                //     transform: ['debowerify']
+                // }
+            }
         }
     });
 
+
+    grunt.registerTask('templates', ['jst', 'replace:jstfix', 'browserify:dist']);
+
     grunt.registerTask('default', function() {
         return grunt.task.run([
+            'templates',
             'connect:livereload',
             'watch'
         ]);
     });
 
+
+    grunt.registerTask('templates', ['jst', 'replace:jstfix']);
+
     grunt.registerTask('docs', ['docco']);
     grunt.registerTask('test', ['mochaTest']);
+    grunt.registerTask('build', ['browserify']);
+
 };

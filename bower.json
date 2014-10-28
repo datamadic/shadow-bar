@@ -6,7 +6,7 @@
     "datamadic <xavier@openfin.co>"
   ],
   "description": "custom scroll bar that employs shadow dom, using translateY to minimize reflows",
-  "main": "index.html",
+  "main": "build/scripts/scrollbar.js",
   "keywords": [
     "custom",
     "scrollbar",
@@ -20,6 +20,8 @@
     "examples",
     "bower_components",
     "test",
-    "tests"
+    "tests",
+    "src",
+    "examples"
   ]
 }
