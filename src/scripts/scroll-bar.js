@@ -54,8 +54,18 @@ ScrollBar.prototype.setRangeAdapter = function(rangeAdapter) {
     if (that.thumb) {
         that.thumb.rangeAdapter = rangeAdapter;
     }
+
     Object.observe(that.rangeAdapter.valueObj, function(change) {
-        that.moveToPercent(change[0].object.value);
+        var value = change[0].object.value;
+        if (value) {
+            try {
+                that.supressUpdates = true;
+                that.moveToPercent(value);
+            }
+            finally {
+                that.supressUpdates = false;
+            }
+        }
     });
 
     console.log('range adapter set', rangeAdapter, that.rangeAdapter, that);
@@ -66,9 +76,7 @@ ScrollBar.prototype.attachedCallback = function() {
 
     var that = this;
 
-    var //scrollbarTemplate = importDoc.querySelector('template'),
-        //scrollBarImportClone = document.importNode(scrollbarTemplate.content, true),
-        scrollbarShadowRoot = this.createShadowRoot();
+    var scrollbarShadowRoot = this.createShadowRoot();
 
     scrollbarShadowRoot.appendChild(scrollbarTemplate.content.cloneNode(true));
 
@@ -88,8 +96,8 @@ ScrollBar.prototype.attachedCallback = function() {
 
     that.attachThumbMouseDown()
         .attachThumbMouseMove()
-        .attachThumbMouseUp()
-        .attachWheelEvent();
+        .attachThumbMouseUp();
+        //.attachWheelEvent();
 
 
 }; // end attaached 
@@ -188,6 +196,9 @@ ScrollBar.prototype.moveThumb = function(location) {
     that.thumb.style[direction] = (100 * percent) + '%';
 
     if (that.rangeAdapter) {
+        if (that.supressUpdates) {
+            return;
+        }
         that.rangeAdapter.setValue(percent);
     }
 }; //end movethumb value
