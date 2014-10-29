@@ -3,6 +3,8 @@ var underbar = require('./underbar.js'),
 		observe = require('./observe.js'),
 		scrollBar = require('./scroll-bar.js'),
 		rangeAdapter = require('./range-adapter.js');
+
+module.exports.RangeAdapter = rangeAdapter;
 		
 
 },{"./observe.js":2,"./range-adapter.js":3,"./scroll-bar.js":4,"./underbar.js":6}],2:[function(require,module,exports){
@@ -551,16 +553,16 @@ ScrollBar.prototype.throttledWheelEvent = throttle(function(event) {
         rangeStop = that.rangeAdapter.rangeStop(),
         currentPercent = ((that.thumb.style && that.thumb.style[styleProperty]) && parseFloat(that.thumb.style[styleProperty])) || 0,
         direction = event['delta' + directionXY] > 0 ? 1 : -1,
-        currentPercentOfTotal = Math.round(that.rangeAdapter.rangeStop() * currentPercent),
-        oneMoreRow = Math.round(currentPercentOfTotal + (1 * direction)),
-        ranged = oneMoreRow / rangeStop;
+        currentPercentAsRows = Math.round(that.rangeAdapter.rangeStop() * currentPercent),
+        oneMoreRow = Math.round(currentPercentAsRows + (1 * direction)),
+        ranged = oneMoreRow / rangeStop / 100;
 
     ranged = ranged > 1 ? 1 : ranged;
     ranged = ranged < 0 ? 0 : ranged;
 
-    if (directionXY === 'Y')
-        console.log('directionXY %s,styleProperty %s,rangeStop %s, currentPercent %s, currentPercentOfTotal %s, oneMoreRow %s, ranged %s',
-            directionXY, styleProperty, rangeStop, currentPercent, currentPercentOfTotal, oneMoreRow, ranged);
+    if (directionXY === 'X')
+        console.log('directionXY %s,styleProperty %s,rangeStop %s, currentPercent %s, currentPercentAsRows %s, oneMoreRow %s, ranged %s',
+            directionXY, styleProperty, rangeStop, currentPercent, currentPercentAsRows, oneMoreRow, ranged);
 
     that.rangeAdapter.setValue(ranged);
 
@@ -755,8 +757,6 @@ if (window){ //jshint ignore:line
 
     };
 }
-
-console.log('yeppers')
 
 
 

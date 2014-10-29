@@ -104,16 +104,16 @@ ScrollBar.prototype.throttledWheelEvent = throttle(function(event) {
         rangeStop = that.rangeAdapter.rangeStop(),
         currentPercent = ((that.thumb.style && that.thumb.style[styleProperty]) && parseFloat(that.thumb.style[styleProperty])) || 0,
         direction = event['delta' + directionXY] > 0 ? 1 : -1,
-        currentPercentOfTotal = Math.round(that.rangeAdapter.rangeStop() * currentPercent),
-        oneMoreRow = Math.round(currentPercentOfTotal + (1 * direction)),
-        ranged = oneMoreRow / rangeStop;
+        currentPercentAsRows = Math.round(that.rangeAdapter.rangeStop() * currentPercent),
+        oneMoreRow = Math.round(currentPercentAsRows + (1 * direction)),
+        ranged = oneMoreRow / rangeStop / 100;
 
     ranged = ranged > 1 ? 1 : ranged;
     ranged = ranged < 0 ? 0 : ranged;
 
-    if (directionXY === 'Y')
-        console.log('directionXY %s,styleProperty %s,rangeStop %s, currentPercent %s, currentPercentOfTotal %s, oneMoreRow %s, ranged %s',
-            directionXY, styleProperty, rangeStop, currentPercent, currentPercentOfTotal, oneMoreRow, ranged);
+    // if (directionXY === 'Y')
+    //     console.log('directionXY %s,styleProperty %s,rangeStop %s, currentPercent %s, currentPercentAsRows %s, oneMoreRow %s, ranged %s',
+    //         directionXY, styleProperty, rangeStop, currentPercent, currentPercentAsRows, oneMoreRow, ranged);
 
     that.rangeAdapter.setValue(ranged);
 
@@ -222,7 +222,7 @@ ScrollBar.prototype.setOrientation = function(orientation) {
 
 ScrollBar.prototype.getMaxScroll = function() {
     var direction = this.orientation === 'y' ? 'clientHeight' : 'clientWidth';
-    return this.parentNode[direction] - SCROLL_BAR_BUTTON_SIZE * 2;
+    return this[direction] - SCROLL_BAR_BUTTON_SIZE * 2;
 
 };
 
