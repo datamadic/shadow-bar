@@ -69,4 +69,4 @@ RangeAdapter = function(subject, userConfig) {
 
 };
 
-module.exports.RangeAdapter = RangeAdapter;
+module.exports = RangeAdapter;
