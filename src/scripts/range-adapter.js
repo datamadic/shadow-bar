@@ -67,6 +67,7 @@ RangeAdapter = function(subject, userConfig) {
         return that.valueObj.value;
     };
 
+    return that;
 };
 
 module.exports = RangeAdapter;

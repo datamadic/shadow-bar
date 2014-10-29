@@ -250,3 +250,5 @@ ScrollBar.prototype.lastPercent = 0.0;
 document.registerElement('scroll-bar', {
     prototype: new ScrollBar()
 });
+
+module.exports. ScrollBar = ScrollBar;
