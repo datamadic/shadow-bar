@@ -1,3 +1,4 @@
+
 var templateHolder = document.createElement('div');
 
     templateHolder.innerHTML = require('./templates.js').scrollbar();
@@ -68,7 +69,7 @@ ScrollBar.prototype.setRangeAdapter = function(rangeAdapter) {
         }
     });
 
-    console.log('range adapter set', rangeAdapter, that.rangeAdapter, that);
+    //console.log('range adapter set', rangeAdapter, that.rangeAdapter, that);
 };
 
 // the createdCallback method will be called by the native code
@@ -143,7 +144,7 @@ ScrollBar.prototype.attachThumbMouseDown = function() {
     var that = this;
 
     that.thumb.addEventListener('mousedown', function(event) {
-        console.log(event);
+        //console.log(event);
         that.isScrolling = true;
         that.offset = event['offset' + that.orientation.toUpperCase()];
     });
@@ -157,7 +158,7 @@ ScrollBar.prototype.attachThumbMouseMove = function() {
     document.addEventListener('mousemove', function(event) {
         if (that.isScrolling) {
             var location = event[that.orientation] - that.offset;
-            console.log(event[that.orientation], that.offset); // - that.bounds.top;
+            //console.log(event[that.orientation], that.offset); // - that.bounds.top;
 
             that.moveThumb(location);
         }
@@ -192,7 +193,7 @@ ScrollBar.prototype.moveThumb = function(location) {
     var direction = this.orientation === 'y' ? 'top' : 'left',
         axis = that.orientation.toUpperCase();
 
-    console.log('move to this percent ', (100 * percent) + '%')
+    //console.log('move to this percent ', (100 * percent) + '%')
     that.thumb.style[direction] = (100 * percent) + '%';
 
     if (that.rangeAdapter) {
@@ -226,7 +227,7 @@ ScrollBar.prototype.setValueUpdatedCallback = function(callback) {
 
 
 ScrollBar.prototype.setOrientation = function(orientation) {
-    console.log('this is the orientation', orientation);
+    //console.log('this is the orientation', orientation);
     this.orientation = orientation;
 
 };
@@ -250,7 +251,7 @@ ScrollBar.prototype.configureOrientation = function() {
 };
 
 ScrollBar.prototype.tickle = function() {
-    this.rangeAdapter.setValue(this.thumb.lastPercent);
+    this.rangeAdapter.setValue(this.lastPercent);
 };
 
 ScrollBar.prototype.lastPercent = 0.0;
@@ -262,4 +263,4 @@ document.registerElement('scroll-bar', {
     prototype: new ScrollBar()
 });
 
-module.exports. ScrollBar = ScrollBar;
+module.exports.ScrollBar = ScrollBar;
