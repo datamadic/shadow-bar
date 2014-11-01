@@ -24,6 +24,11 @@
               </a>
             
               
+              <a class="source" href="document.html">
+                document.js
+              </a>
+            
+              
               <a class="source" href="scrollbar.html">
                 scrollbar.js
               </a>
@@ -81,9 +86,23 @@
             build: <span class="hljs-string">'build'</span>
         },
         watch: {
-            js: {
-                files: [<span class="hljs-string">'{,*/}*.js'</span>],
-                tasks: [<span class="hljs-string">'jsbeautifier'</span>, <span class="hljs-string">'docco'</span>],
+            js: {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <p>files: [‘{,<em>/}</em>.js’],</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                files: [<span class="hljs-string">'src/scripts/*.js'</span>],
+                tasks: [<span class="hljs-string">'jsbeautifier'</span>, <span class="hljs-string">'docco'</span>, <span class="hljs-string">'build'</span>],
                 options: {
                     livereload: <span class="hljs-literal">true</span>
                 }
@@ -162,11 +181,11 @@
         </li>
         
         
-        <li id="section-3">
+        <li id="section-4">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-3">&#182;</a>
+                <a class="pilcrow" href="#section-4">&#182;</a>
               </div>
               <p>Change this to ‘0.0.0.0’ to access the server from outside.</p>
 
@@ -228,11 +247,11 @@
         </li>
         
         
-        <li id="section-4">
+        <li id="section-5">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-4">&#182;</a>
+                <a class="pilcrow" href="#section-5">&#182;</a>
               </div>
               <p>,
 options: {
@@ -250,7 +269,7 @@ options: {
 
     grunt.registerTask(<span class="hljs-string">'default'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> </span>{
         <span class="hljs-keyword">return</span> grunt.task.run([
-            <span class="hljs-string">'templates'</span>,
+            <span class="hljs-string">'build'</span>,
             <span class="hljs-string">'connect:livereload'</span>,
             <span class="hljs-string">'watch'</span>
         ]);
@@ -261,7 +280,7 @@ options: {
 
     grunt.registerTask(<span class="hljs-string">'docs'</span>, [<span class="hljs-string">'docco'</span>]);
     grunt.registerTask(<span class="hljs-string">'test'</span>, [<span class="hljs-string">'mochaTest'</span>]);
-    grunt.registerTask(<span class="hljs-string">'build'</span>, [<span class="hljs-string">'browserify'</span>]);
+    grunt.registerTask(<span class="hljs-string">'build'</span>, [<span class="hljs-string">'templates'</span>, <span class="hljs-string">'browserify'</span>]);
 
 };</pre></div></div>
             

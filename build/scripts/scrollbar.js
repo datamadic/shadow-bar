@@ -7,7 +7,7 @@ var underbar = require('./underbar.js'),
 module.exports.RangeAdapter = rangeAdapter;
 		
 
-},{"./observe.js":2,"./range-adapter.js":3,"./scroll-bar.js":4,"./underbar.js":6}],2:[function(require,module,exports){
+},{"./observe.js":2,"./range-adapter.js":3,"./scroll-bar.js":4,"./underbar.js":7}],2:[function(require,module,exports){
 /*
   we need a shim for now object.observe, its from here: 
   https://github.com/jdarling/Object.observe/blob/master/Object.observe.poly.js
@@ -442,23 +442,255 @@ RangeAdapter = function(subject, userConfig) {
         return that.valueObj.value;
     };
 
+    return that;
 };
 
-module.exports.RangeAdapter = RangeAdapter;
+module.exports = RangeAdapter;
 
 },{}],4:[function(require,module,exports){
-var templateHolder = document.createElement('div');
+// # scroll-bar.js
+//
+// This module defines a custom `<scroll-bar>` element and attaches it to the 
+// document.
+//
 
-    templateHolder.innerHTML = require('./templates.js').scrollbar();
+// Because this is a node module, we may not have the DOM when run. In practice 
+// this will not really happen, but it is useful to test this module as a node 
+// module and having an object that abstracts the dom is quite useful. 
+var DOM = {
+    window: require('./window.js'),
+    document: require('./window.js').document
+};
 
-var scrollbarTemplate = templateHolder.querySelector('template');
+var templateHolder = DOM.document.createElement('div'),
+    SCROLL_BAR_BUTTON_SIZE = 15,
+    throttle = require('./throttle.js');
 
-var importDoc = document.currentScript.ownerDocument,
-    SCROLL_BAR_BUTTON_SIZE = 15;
+templateHolder.innerHTML = require('./templates.js').scrollbar();
+    
+
+// An instance of his will become the prototype for the custom scroll-bar
+// element
+var ScrollBar = function() {
+
+    
+};
+
+ScrollBar.prototype = Object.create(DOM.window.HTMLElement.prototype);
+
+ScrollBar.prototype.setRangeAdapter = function(rangeAdapter) {
+
+    var that = this;
+
+    that.rangeAdapter = rangeAdapter;
+    if (that.thumb) {
+        that.thumb.rangeAdapter = rangeAdapter;
+    }
+
+    Object.observe(that.rangeAdapter.valueObj, function(change) {
+        var value = change[0].object.value;
+        if (value) {
+            try {
+                that.supressUpdates = true;
+                that.moveToPercent(value);
+            }
+            finally {
+                that.supressUpdates = false;
+            }
+        }
+    });
+};
+
+// the createdCallback method will be called by the native code
+ScrollBar.prototype.attachedCallback = function() {
+
+    var that = this;
+
+    var scrollbarShadowRoot = this.createShadowRoot();
+
+    // add the template content to the shadow root
+    scrollbarShadowRoot
+        .appendChild(
+            templateHolder
+                .querySelector('template')
+                    .content.cloneNode(true));
 
 
+    this.scrollbarShadowRoot = scrollbarShadowRoot;
+
+    // get the actionable child elements
+    this.bar = scrollbarShadowRoot.querySelector('.scroll-bar');
+    this.thumb = scrollbarShadowRoot.querySelector('.scroll-bar-thumb');
+    this.gutter = scrollbarShadowRoot.querySelector('.scroll-bar-gutter');
+
+    this.configureOrientation();
+
+    var bounds = that.bounds = that.getBoundingClientRect();
+    that.isScrolling = false;
+
+    that.attachThumbMouseDown()
+        .attachThumbMouseMove()
+        .attachThumbMouseUp();
+}; // end attaached 
+
+
+ScrollBar.prototype.throttledWheelEvent = throttle(function(event) {
+
+    var that = this;
+
+    var directionXY = that.orientation.toUpperCase(),
+        styleProperty = directionXY === 'Y' ? 'top' : 'left',
+        rangeStop = that.rangeAdapter.rangeStop(),
+        currentPercent = ((that.thumb.style && that.thumb.style[styleProperty]) && parseFloat(that.thumb.style[styleProperty])) || 0,
+        direction = event['delta' + directionXY] > 0 ? 1 : -1,
+        currentPercentAsRows = Math.round(that.rangeAdapter.rangeStop() * currentPercent),
+        oneMoreRow = Math.round(currentPercentAsRows + (1 * direction)),
+        ranged = oneMoreRow / rangeStop / 100;
+
+    ranged = ranged > 1 ? 1 : ranged;
+    ranged = ranged < 0 ? 0 : ranged;
+
+    that.rangeAdapter.setValue(ranged);
+
+}, 30);
+
+ScrollBar.prototype.attachWheelEvent = function() {
+    var that = this;
+
+    DOM.document.addEventListener('wheel', function(event) {
+        // dont pull on the page at all
+        event.preventDefault();
+        that.throttledWheelEvent(event);
+    });
+
+    return that;
+};
+
+ScrollBar.prototype.attachThumbMouseDown = function() {
+    var that = this;
+
+    that.thumb.addEventListener('mousedown', function(event) {
+        that.isScrolling = true;
+        that.offset = event['offset' + that.orientation.toUpperCase()];
+    });
+
+    return that;
+};
+ 
+ScrollBar.prototype.attachThumbMouseMove = function() {
+    var that = this;
+
+    DOM.document.addEventListener('mousemove', function(event) {
+        if (that.isScrolling) {
+
+            that.moveThumb(event['page' + that.orientation.toUpperCase()] );
+        }
+    });
+
+    return that;
+};
+
+ScrollBar.prototype.attachThumbMouseUp = function() {
+    var that = this;
+    DOM.document.addEventListener('mouseup', function(event) {
+        if (that.isScrolling) {
+            that.isScrolling = false;
+        }
+    });
+
+    return that;
+};
+
+ScrollBar.prototype.moveThumb = function(pageLocation) {
+    var that = this,
+        direction = this.orientation === 'y' ? 'top' : 'left',
+        percent,
+        maxScroll = that.getMaxScroll(),
+        distanceFromEdge = that.gutter.getBoundingClientRect(),
+        offBy =  pageLocation - distanceFromEdge[direction] - that.offset;
+    
+    offBy = offBy < 0 ? 0 : offBy;
+    offBy = offBy / maxScroll;
+    offBy = offBy > 1 ? 1 : offBy;
+    offBy = offBy * 100;
+
+    that.thumb.style[direction] = offBy + '%';
+
+    if (that.rangeAdapter) {
+        if (that.supressUpdates) {
+            return;
+        }
+        that.rangeAdapter.setValue(percent);
+    }
+}; //end movethumb value
+
+ScrollBar.prototype.moveToPercent = function(percent) {
+    var that = this;
+
+    if (!that.isScrolling) {
+        that.moveThumb(percent * this.getMaxScroll());
+    }
+};
+
+
+ScrollBar.prototype.setValueUpdatedCallback = function(callback) {
+    this.valueUpdatedCallback = callback;
+
+};
+
+
+ScrollBar.prototype.setOrientation = function(orientation) {
+    this.orientation = orientation;
+
+};
+
+ScrollBar.prototype.getMaxScroll = function() {
+    var direction = this.orientation === 'y' ? 'clientHeight' : 'clientWidth';
+    return this.gutter[direction];
+
+};
+
+
+ScrollBar.prototype.configureOrientation = function() {
+    var orientation = 'y';
+
+    if ('horizontal' in this.attributes) {
+        orientation = 'x';
+        this.bar.classList.add('horizontal');
+    }
+
+    this.setOrientation(orientation);
+};
+
+ScrollBar.prototype.tickle = function() {
+    this.rangeAdapter.setValue(this.lastPercent);
+};
+
+ScrollBar.prototype.lastPercent = 0.0;
+
+
+DOM.document.registerElement('scroll-bar', {
+    prototype: new ScrollBar()
+});
+
+
+module.exports.ScrollBar = ScrollBar;
+
+},{"./templates.js":5,"./throttle.js":6,"./window.js":8}],5:[function(require,module,exports){
+module.exports = module.exports || {};
+
+module.exports["scrollbar"] = function(obj) {
+obj || (obj = {});
+var __t, __p = '', __e = _.escape;
+with (obj) {
+__p += '\t<template>\n\t\t<style>\n\t\t.scroll-bar {\n\t\t\twidth: 15px;\n\t\t\tposition: absolute;\n\t\t\ttop:0;\n\t\t\tbottom:0;\n\t\t\tbackground-color: lightgrey;\n\t\t}\n\t\t.scroll-bar-gutter {\n\t\t\tposition: absolute;\n\t\t\ttop: 0%;\n\t\t\tbottom: 0%;\n\t\t\tright: 0%;\n\t\t\tleft: 0%;\n\t\t\tmargin-top: 15px;\n\t\t\tmargin-bottom: 35px;\n\t\t}\n\t\t.scroll-bar.horizontal {\n\t\t\theight: 15px;\n\t\t\twidth: 100%;\n\t\t\tposition: absolute;\n\t\t\tleft:0;\n\t\t\tright: 100%;\n\t\t\ttop:100%;\n\t\t}\n\n\t\t.horizontal .scroll-bar-gutter {\n\t\t\tposition: absolute;\n\t\t\ttop: 0%;\n\t\t\tbottom: 0%;\n\t\t\tright: 0%;\n\t\t\tleft: 0%;\n\t\t\tmargin-top: 0px;\n\t\t\tmargin-bottom: 0px;\n\t\t\tmargin-left: 15px;\n\t\t\tmargin-right: 35px;\n\t\t}\n\n\t\t.scroll-bar-up{\n\t\t\tposition: absolute;\n\t\t\ttop: 0;\n\t\t\tleft: 0;\n\t\t\twidth: 15px;\n\t\t\theight: 15px;\n\t\t\tbackground-color: darkgrey;\n\t\t}\n\n\t\t.scroll-bar.horizontal .scroll-bar-up{\n\t\t\tposition: absolute;\n\t\t\ttop: 0;\n\t\t\tright: 0;\n\t\t\tleft: auto;\n\t\t\twidth: 15px;\n\t\t\theight: 15px;\n\t\t\tbackground-color: darkgrey;\n\t\t}\n\n\t\t.scroll-bar-thumb {\n\t\t\tbackground-color: gray;\n\t\t\twidth: 15px;\n\t\t\theight: 20px;\n\t\t\ttop: 0;\n\t\t\tleft: 0px;\n\t\t\tposition: absolute;\n\t\t}\n\t\t.scroll-bar.horizontal .scroll-bar-thumb {\n\t\t\theight: 15px;\n\t\t\twidth: 20px;\n\t\t\tleft: 0px;\n\t\t\ttop: 0;\n\t\t\tposition: absolute;\n\t\t}\n\n\t\t.scroll-bar-down{\n\t\t\tposition: absolute;\n\t\t\tright: 0;\n\t\t\tbottom: 0;\n\t\t\twidth: 15px;\n\t\t\theight: 15px;\n\t\t\tbackground-color: darkgrey;\n\t\t}\n\t\t.scroll-bar.horizontal .scroll-bar-down{\n\t\t\tposition: absolute;\n\t\t\tleft: 0;\n\t\t\twidth: 15px;\n\t\t\theight: 15px;\n\t\t\tbackground-color: darkgrey;\n\t\t}\n\n\t\t</style>\n\t\t<div class="scroll-bar">\n\t\t\t<div class="scroll-bar-up"></div>\n\t\t\t<div class="scroll-bar-gutter">\n\t\t\t\t<div class="scroll-bar-thumb" draggable="false"></div>\n\t\t\t</div>\n\t\t\t<div class="scroll-bar-down"></div>\n\t\t</div>\n\t</template>\n';
+
+}
+return __p
+};
+},{}],6:[function(require,module,exports){
 // this is from underscore http://underscorejs.org/docs/underscore.html
-var throttle = function(func, wait, options) {
+module.exports = function(func, wait, options) {
     var context, args, result;
     var timeout = null;
     var previous = 0;
@@ -487,235 +719,13 @@ var throttle = function(func, wait, options) {
         return result;
     };
 };
-
-
-// An instance of his will become the prototype for the custom scroll-bar
-// element
-var ScrollBar = function() {};
-
-ScrollBar.prototype = Object.create(HTMLElement.prototype);
-
-ScrollBar.prototype.setRangeAdapter = function(rangeAdapter) {
-
-    var that = this;
-
-    that.rangeAdapter = rangeAdapter;
-    if (that.thumb) {
-        that.thumb.rangeAdapter = rangeAdapter;
-    }
-    Object.observe(that.rangeAdapter.valueObj, function(change) {
-        that.moveToPercent(change[0].object.value);
-    });
-
-    console.log('range adapter set', rangeAdapter, that.rangeAdapter, that);
-};
-
-// the createdCallback method will be called by the native code
-ScrollBar.prototype.attachedCallback = function() {
-
-    var that = this;
-
-    var //scrollbarTemplate = importDoc.querySelector('template'),
-        //scrollBarImportClone = document.importNode(scrollbarTemplate.content, true),
-        scrollbarShadowRoot = this.createShadowRoot();
-
-    scrollbarShadowRoot.appendChild(scrollbarTemplate.content.cloneNode(true));
-
-
-    this.scrollbarShadowRoot = scrollbarShadowRoot;
-
-    // get the actionable child elements
-    this.bar = scrollbarShadowRoot.querySelector('.scroll-bar');
-    this.thumb = scrollbarShadowRoot.querySelector('.scroll-bar-thumb');
-    this.btnUp = scrollbarShadowRoot.querySelector('.scroll-bar-up');
-    this.btnDown = scrollbarShadowRoot.querySelector('.scroll-bar-down');
-
-    this.configureOrientation();
-
-    var bounds = that.bounds = that.getBoundingClientRect();
-    that.isScrolling = false;
-
-    that.attachThumbMouseDown()
-        .attachThumbMouseMove()
-        .attachThumbMouseUp()
-        .attachWheelEvent();
-
-
-}; // end attaached 
-
-
-ScrollBar.prototype.throttledWheelEvent = throttle(function(event) {
-
-    var that = this;
-
-    var directionXY = that.orientation.toUpperCase(),
-        styleProperty = directionXY === 'Y' ? 'top' : 'left',
-        rangeStop = that.rangeAdapter.rangeStop(),
-        currentPercent = ((that.thumb.style && that.thumb.style[styleProperty]) && parseFloat(that.thumb.style[styleProperty])) || 0,
-        direction = event['delta' + directionXY] > 0 ? 1 : -1,
-        currentPercentAsRows = Math.round(that.rangeAdapter.rangeStop() * currentPercent),
-        oneMoreRow = Math.round(currentPercentAsRows + (1 * direction)),
-        ranged = oneMoreRow / rangeStop / 100;
-
-    ranged = ranged > 1 ? 1 : ranged;
-    ranged = ranged < 0 ? 0 : ranged;
-
-    if (directionXY === 'X')
-        console.log('directionXY %s,styleProperty %s,rangeStop %s, currentPercent %s, currentPercentAsRows %s, oneMoreRow %s, ranged %s',
-            directionXY, styleProperty, rangeStop, currentPercent, currentPercentAsRows, oneMoreRow, ranged);
-
-    that.rangeAdapter.setValue(ranged);
-
-}, 30);
-
-ScrollBar.prototype.attachWheelEvent = function() {
-    var that = this;
-
-    document.addEventListener('wheel', function(event) {
-        // dont pull on the page at all
-        event.preventDefault();
-        that.throttledWheelEvent(event);
-    });
-
-    return that;
-};
-
-ScrollBar.prototype.attachThumbMouseDown = function() {
-    var that = this;
-
-    that.thumb.addEventListener('mousedown', function(event) {
-        console.log(event);
-        that.isScrolling = true;
-        that.offset = event['offset' + that.orientation.toUpperCase()];
-    });
-
-    return that;
-};
-
-ScrollBar.prototype.attachThumbMouseMove = function() {
-    var that = this;
-
-    document.addEventListener('mousemove', function(event) {
-        if (that.isScrolling) {
-            var location = event[that.orientation] - that.offset;
-            console.log(event[that.orientation], that.offset); // - that.bounds.top;
-
-            that.moveThumb(location);
-        }
-    });
-
-    return that;
-};
-
-ScrollBar.prototype.attachThumbMouseUp = function() {
-    var that = this;
-    document.addEventListener('mouseup', function(event) {
-        if (that.isScrolling) {
-            that.isScrolling = false;
-        }
-    });
-
-    return that;
-};
-
-ScrollBar.prototype.moveThumb = function(location) {
-
-    var that = this,
-        range = that.getMaxScroll();
-
-    //keep the scrolling in range
-    location = (location) < 0 ? 0 : location;
-    location = (location) > range ? range : location;
-
-    var percent = location / that.getMaxScroll();
-    this.lastPercent = percent;
-
-    var direction = this.orientation === 'y' ? 'top' : 'left',
-        axis = that.orientation.toUpperCase();
-
-    console.log('move to this percent ', (100 * percent) + '%')
-    that.thumb.style[direction] = (100 * percent) + '%';
-
-    if (that.rangeAdapter) {
-        that.rangeAdapter.setValue(percent);
-    }
-}; //end movethumb value
-
-ScrollBar.prototype.moveToPercent = function(percent) {
-    var that = this;
-    // if already dragging, dont respect the observable value sets
-    if (!that.isScrolling) {
-        //console.log('set to this', percent);
-        that.moveThumb(percent * this.getMaxScroll());
-    }
-
-};
-
-ScrollBar.prototype.getLocation = function() {
-    return 0 / that.getMaxScroll() * 100;
-
-};
-
-
-ScrollBar.prototype.setValueUpdatedCallback = function(callback) {
-    this.valueUpdatedCallback = callback;
-
-};
-
-
-ScrollBar.prototype.setOrientation = function(orientation) {
-    console.log('this is the orientation', orientation);
-    this.orientation = orientation;
-
-};
-
-ScrollBar.prototype.getMaxScroll = function() {
-    var direction = this.orientation === 'y' ? 'clientHeight' : 'clientWidth';
-    return this.parentNode[direction] - SCROLL_BAR_BUTTON_SIZE * 2;
-
-};
-
-
-ScrollBar.prototype.configureOrientation = function() {
-    var orientation = 'y';
-
-    if ('horizontal' in this.attributes) {
-        orientation = 'x';
-        this.bar.classList.add('horizontal');
-    }
-
-    this.setOrientation(orientation);
-};
-
-ScrollBar.prototype.tickle = function() {
-    this.rangeAdapter.setValue(this.thumb.lastPercent);
-};
-
-ScrollBar.prototype.lastPercent = 0.0;
-
-//scrollBarThumbProto.lastPercent = 0.0;
-
-
-document.registerElement('scroll-bar', {
-    prototype: new ScrollBar()
-});
-
-},{"./templates.js":5}],5:[function(require,module,exports){
-module.exports = module.exports || {};
-
-module.exports["scrollbar"] = function(obj) {
-obj || (obj = {});
-var __t, __p = '', __e = _.escape;
-with (obj) {
-__p += '\t<template>\n\t\t<style>\n\t\t.scroll-bar {\n\t\t\twidth: 15px;\n\t\t\tposition: absolute;\n\t\t\ttop:0;\n\t\t\tbottom:0;\n\t\t\tbackground-color: lightgrey;\n\t\t}\n\t\t.scroll-gutter {\n\t\t\tposition: absolute;\n\t\t\ttop: 0%;\n\t\t\tbottom: 0%;\n\t\t\tright: 0%;\n\t\t\tleft: 0%;\n\t\t\tmargin-top: 15px;\n\t\t\tmargin-bottom: 35px;\n\t\t}\n\t\t.scroll-bar.horizontal {\n\t\t\theight: 15px;\n\t\t\twidth: 100%;\n\t\t\tposition: absolute;\n\t\t\tleft:0;\n\t\t\tright: 100%;\n\t\t\ttop:100%;\n\t\t}\n\n\t\t.horizontal .scroll-gutter {\n\t\t\tposition: absolute;\n\t\t\ttop: 0%;\n\t\t\tbottom: 0%;\n\t\t\tright: 0%;\n\t\t\tleft: 0%;\n\t\t\tmargin-top: 0px;\n\t\t\tmargin-bottom: 0px;\n\t\t\tmargin-left: 15px;\n\t\t\tmargin-right: 35px;\n\t\t}\n\n\t\t.scroll-bar-up{\n\t\t\tposition: absolute;\n\t\t\ttop: 0;\n\t\t\tleft: 0;\n\t\t\twidth: 15px;\n\t\t\theight: 15px;\n\t\t\tbackground-color: darkgrey;\n\t\t}\n\n\t\t.scroll-bar.horizontal .scroll-bar-up{\n\t\t\tposition: absolute;\n\t\t\ttop: 0;\n\t\t\tright: 0;\n\t\t\tleft: auto;\n\t\t\twidth: 15px;\n\t\t\theight: 15px;\n\t\t\tbackground-color: darkgrey;\n\t\t}\n\n\t\t.scroll-bar-thumb {\n\t\t\tbackground-color: gray;\n\t\t\twidth: 15px;\n\t\t\theight: 20px;\n\t\t\ttop: 0;\n\t\t\tleft: 0px;\n\t\t\tposition: absolute;\n\t\t}\n\t\t.scroll-bar.horizontal .scroll-bar-thumb {\n\t\t\theight: 15px;\n\t\t\twidth: 20px;\n\t\t\tleft: 0px;\n\t\t\ttop: 0;\n\t\t\tposition: absolute;\n\t\t}\n\n\t\t.scroll-bar-down{\n\t\t\tposition: absolute;\n\t\t\tright: 0;\n\t\t\tbottom: 0;\n\t\t\twidth: 15px;\n\t\t\theight: 15px;\n\t\t\tbackground-color: darkgrey;\n\t\t}\n\t\t.scroll-bar.horizontal .scroll-bar-down{\n\t\t\tposition: absolute;\n\t\t\tleft: 0;\n\t\t\twidth: 15px;\n\t\t\theight: 15px;\n\t\t\tbackground-color: darkgrey;\n\t\t}\n\n\t\t</style>\n\t\t<div class="scroll-bar">\n\t\t\t<div class="scroll-bar-up"></div>\n\t\t\t<div class="scroll-gutter">\n\t\t\t\t<div class="scroll-bar-thumb" draggable="false"></div>\n\t\t\t</div>\n\t\t\t<div class="scroll-bar-down"></div>\n\t\t</div>\n\t</template>\n';
-
-}
-return __p
-};
-},{}],6:[function(require,module,exports){
-
-
-//expose browserify to global
+},{}],7:[function(require,module,exports){
+// Because this is a node module, we may not have the DOM when run. In practice 
+// this will not really happen, but it is useful to test this module as a node 
+// module and having an object that abstracts the dom is quite useful. 
+var DOM = {};
+
+DOM.window = require('./window.js');
 
 var invert = function(obj) {
     var result = {};
@@ -750,17 +760,27 @@ var createEscaper = function(map) {
     };
 };
 
-if (window){ //jshint ignore:line
-    window._ = { //jshint ignore:line
-        escape: createEscaper(escapeMap), 
-        unescape: createEscaper(unescapeMap)
+var _ = { //jshint ignore:line
+    escape: createEscaper(escapeMap), 
+    unescape: createEscaper(unescapeMap)
 
-    };
 }
 
+if (DOM.window){ //jshint ignore:line
+    DOM.window._ = _;
+}
+
+module.exports._ = _;
 
 
 
 
 
-},{}]},{},[1,2,3,4,5,6]);
+
+},{"./window.js":8}],8:[function(require,module,exports){
+// # Document.js
+// This module allows for testing of the modules that interact with the document
+// API 
+
+module.exports = window || {};
+},{}]},{},[1,2,3,4,5,6,7,8]);

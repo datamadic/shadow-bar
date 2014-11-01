@@ -12,8 +12,9 @@ module.exports = function(grunt) {
         },
         watch: {
             js: {
-                files: ['{,*/}*.js'],
-                tasks: ['jsbeautifier', 'docco'],
+                //files: ['{,*/}*.js'],
+                files: ['src/scripts/*.js'],
+                tasks: ['jsbeautifier', 'docco', 'build'],
                 options: {
                     livereload: true
                 }
@@ -154,7 +155,7 @@ module.exports = function(grunt) {
 
     grunt.registerTask('default', function() {
         return grunt.task.run([
-            'templates',
+            'build',
             'connect:livereload',
             'watch'
         ]);
@@ -165,6 +166,6 @@ module.exports = function(grunt) {
 
     grunt.registerTask('docs', ['docco']);
     grunt.registerTask('test', ['mochaTest']);
-    grunt.registerTask('build', ['browserify']);
+    grunt.registerTask('build', ['templates', 'browserify']);
 
 };

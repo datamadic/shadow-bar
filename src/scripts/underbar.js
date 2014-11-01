@@ -1,6 +1,9 @@
+// Because this is a node module, we may not have the DOM when run. In practice 
+// this will not really happen, but it is useful to test this module as a node 
+// module and having an object that abstracts the dom is quite useful. 
+var DOM = {};
 
-
-//expose browserify to global
+DOM.window = require('./window.js');
 
 var invert = function(obj) {
     var result = {};
@@ -35,13 +38,17 @@ var createEscaper = function(map) {
     };
 };
 
-if (window){ //jshint ignore:line
-    window._ = { //jshint ignore:line
-        escape: createEscaper(escapeMap), 
-        unescape: createEscaper(unescapeMap)
+var _ = { //jshint ignore:line
+    escape: createEscaper(escapeMap), 
+    unescape: createEscaper(unescapeMap)
 
-    };
 }
+
+if (DOM.window){ //jshint ignore:line
+    DOM.window._ = _;
+}
+
+module.exports._ = _;
 
 
 

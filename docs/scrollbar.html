@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>scrollbar.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page">
+            
+              
+              <a class="source" href="gruntfile.html">
+                gruntfile.js
+              </a>
+            
+              
+              <a class="source" href="document.html">
+                document.js
+              </a>
+            
+              
+              <a class="source" href="scrollbar.html">
+                scrollbar.js
+              </a>
+            
+              
+              <a class="source" href="test.html">
+                test.js
+              </a>
+            
+          </div>
+        </li>
+      </ul>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>scrollbar.js</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> expect = <span class="hljs-built_in">require</span>(<span class="hljs-string">'chai'</span>).expect,
+    util = <span class="hljs-built_in">require</span>(<span class="hljs-string">'util'</span>),
+    mockery = <span class="hljs-built_in">require</span>(<span class="hljs-string">'mockery'</span>),
+    moduleUnderTest = <span class="hljs-string">'../src/scripts/scroll-bar.js'</span>,
+    generateFunctionSignatureExpects = <span class="hljs-built_in">require</span>(<span class="hljs-string">'shape-tests'</span>).generateFunctionSignatureExpects,
+    generatePropertyExpects = <span class="hljs-built_in">require</span>(<span class="hljs-string">'shape-tests'</span>).generatePropertyExpects,
+    noop = <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> </span>{},
+    fakeWindow = {
+        HTMLElement: {
+            prototype: {}
+        },
+        <span class="hljs-built_in">document</span>: {
+            registerElement: noop,
+            addEventListener: noop,
+            createElement: <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> </span>{
+                <span class="hljs-keyword">return</span> {
+                    querySelector: <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> </span>{
+                        <span class="hljs-keyword">return</span> {};
+                    }
+                };
+            }
+        }
+    };
+
+
+describe(<span class="hljs-string">'scroll-bar '</span>, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> </span>{
+
+    describe(<span class="hljs-string">'shape'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> </span>{
+
+        mockery.registerAllowables([moduleUnderTest, <span class="hljs-string">'./throttle.js'</span>, <span class="hljs-string">'./templates.js'</span>, <span class="hljs-string">'./underbar.js'</span>]);
+        mockery.registerMock(<span class="hljs-string">'./window.js'</span>, fakeWindow);
+        mockery.enable({
+            useCleanCache: <span class="hljs-literal">true</span>
+        });
+
+        <span class="hljs-keyword">var</span> ScrollBar = <span class="hljs-keyword">new</span> <span class="hljs-built_in">require</span>(moduleUnderTest).ScrollBar;
+
+        <span class="hljs-keyword">var</span> scrollBarShape = {
+            properties: [],
+            methods: [{
+                name: <span class="hljs-string">'attachedCallback'</span>,
+                numArgs: <span class="hljs-number">0</span>,
+                inPrototype: <span class="hljs-literal">true</span>
+            }, {
+                name: <span class="hljs-string">'setRangeAdapter'</span>,
+                numArgs: <span class="hljs-number">1</span>,
+                inPrototype: <span class="hljs-literal">true</span>
+            }]
+        };
+
+        generateFunctionSignatureExpects(ScrollBar, scrollBarShape.methods);
+
+        mockery.disable();
+        mockery.deregisterAll();
+
+    });
+});</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>
