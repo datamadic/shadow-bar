@@ -123,7 +123,6 @@ ScrollBar.prototype.attachThumbMouseDown = function() {
         that.isScrolling = true;
         var offset = (typeof event['offset' + that.orientation.toUpperCase()] === 'undefined') ? 'layer' : 'offset';
         that.offset = event[offset + that.orientation.toUpperCase()];
-        console.log(event.offset, event.layer, event, 'the offset', that.offset);
     });
 
     return that;
