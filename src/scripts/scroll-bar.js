@@ -1,12 +1,12 @@
 // # scroll-bar.js
 //
-// This module defines a custom `<scroll-bar>` element and attaches it to the 
+// This module defines a custom `<scroll-bar>` element and attaches it to the
 // document.
 //
 
-// Because this is a node module, we may not have the DOM when run. In practice 
-// this will not really happen, but it is useful to test this module as a node 
-// module and having an object that abstracts the dom is quite useful. 
+// Because this is a node module, we may not have the DOM when run. In practice
+// this will not really happen, but it is useful to test this module as a node
+// module and having an object that abstracts the dom is quite useful.
 var DOM = {
     window: require('./window.js'),
     document: require('./window.js').document
@@ -17,13 +17,13 @@ var templateHolder = DOM.document.createElement('div'),
     throttle = require('./throttle.js');
 
 templateHolder.innerHTML = require('./templates.js').scrollbar();
-    
+
 
 // An instance of his will become the prototype for the custom scroll-bar
 // element
 var ScrollBar = function() {
 
-    
+
 };
 
 ScrollBar.prototype = Object.create(DOM.window.HTMLElement.prototype);
@@ -81,7 +81,7 @@ ScrollBar.prototype.attachedCallback = function() {
     that.attachThumbMouseDown()
         .attachThumbMouseMove()
         .attachThumbMouseUp();
-}; // end attaached 
+}; // end attaached
 
 
 ScrollBar.prototype.throttledWheelEvent = throttle(function(event) {
@@ -121,12 +121,13 @@ ScrollBar.prototype.attachThumbMouseDown = function() {
 
     that.thumb.addEventListener('mousedown', function(event) {
         that.isScrolling = true;
-        that.offset = event['offset' + that.orientation.toUpperCase()];
+        var offset = (typeof event['offset' + that.orientation.toUpperCase()] === 'undefined') ? 'layer' : 'offset';
+        that.offset = event[offset + that.orientation.toUpperCase()];
     });
 
     return that;
 };
- 
+
 ScrollBar.prototype.attachThumbMouseMove = function() {
     var that = this;
 
@@ -158,7 +159,7 @@ ScrollBar.prototype.moveThumb = function(pageLocation) {
         maxScroll = that.getMaxScroll(),
         distanceFromEdge = that.gutter.getBoundingClientRect(),
         offBy =  pageLocation - distanceFromEdge[direction] - that.offset;
-    
+
     offBy = offBy < 0 ? 0 : offBy;
     offBy = offBy / maxScroll;
     offBy = offBy > 1 ? 1 : offBy;
@@ -170,7 +171,7 @@ ScrollBar.prototype.moveThumb = function(pageLocation) {
         if (that.supressUpdates) {
             return;
         }
-        that.rangeAdapter.setValue(percent);
+        that.rangeAdapter.setValue(offBy/100);
     }
 }; //end movethumb value
 
